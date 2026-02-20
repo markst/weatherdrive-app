@@ -56,7 +56,6 @@ class HomeViewModel {
                     .map { (category, catShows) ->
                         CategoryNode(
                             category = category,
-                            year = year,
                             children = catShows.sortedBy { it.title }
                         )
                     }

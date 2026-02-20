@@ -7,6 +7,5 @@ data class YearNode(
 
 data class CategoryNode(
     val category: String,
-    val year: String,
     val children: List<Show>
 )
