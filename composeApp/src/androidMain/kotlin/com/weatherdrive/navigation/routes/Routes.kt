@@ -1,7 +1,10 @@
 package com.weatherdrive.navigation.routes
 
+import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.Show
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Navigation routes for the app.
@@ -15,8 +18,11 @@ data class ShowDetailRoute(
     val title: String,
     val thumbnail: String?,
     val year: String,
-    val category: String
+    val category: String,
+    val filelistJson: String = "[]"
 )
+
+private val json = Json { ignoreUnknownKeys = true }
 
 /**
  * Extension function to convert a Show to a ShowDetailRoute.
@@ -26,7 +32,8 @@ fun Show.toRoute(): ShowDetailRoute = ShowDetailRoute(
     title = title,
     thumbnail = thumbnail,
     year = year,
-    category = category
+    category = category,
+    filelistJson = json.encodeToString(filelist)
 )
 
 /**
@@ -37,5 +44,6 @@ fun ShowDetailRoute.toShow(): Show = Show(
     title = title,
     thumbnail = thumbnail,
     year = year,
-    category = category
+    category = category,
+    filelist = json.decodeFromString(filelistJson)
 )
