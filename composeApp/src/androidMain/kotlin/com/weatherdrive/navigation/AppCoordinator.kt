@@ -1,6 +1,9 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,7 +34,7 @@ data class ShowDetailRoute(
  * Uses Jetpack Compose Navigation with NavHost and NavController.
  */
 actual class AppCoordinator actual constructor() {
-    private lateinit var navController: NavHostController
+    private var navController: NavHostController? by mutableStateOf(null)
 
     /**
      * Composable content that renders the navigation host.
@@ -39,10 +42,11 @@ actual class AppCoordinator actual constructor() {
      */
     @Composable
     actual fun Content() {
-        navController = rememberNavController()
+        val controller = rememberNavController()
+        navController = controller
 
         NavHost(
-            navController = navController,
+            navController = controller,
             startDestination = HomeRoute
         ) {
             composable<HomeRoute> {
@@ -68,7 +72,7 @@ actual class AppCoordinator actual constructor() {
     }
 
     actual fun navigateToShowDetail(show: Show) {
-        navController.navigate(
+        navController?.navigate(
             ShowDetailRoute(
                 id = show.id,
                 title = show.title,
@@ -80,6 +84,6 @@ actual class AppCoordinator actual constructor() {
     }
 
     actual fun navigateBack() {
-        navController.popBackStack()
+        navController?.popBackStack()
     }
 }
