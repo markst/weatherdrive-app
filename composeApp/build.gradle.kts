@@ -32,6 +32,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.navigation.compose)
         }
         commonMain.dependencies {
             implementation(compose.runtime)

@@ -2,11 +2,14 @@ package com.weatherdrive
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import com.weatherdrive.ui.HomeScreen
+import androidx.compose.runtime.remember
+import com.weatherdrive.navigation.AppCoordinator
 
 @Composable
 fun App() {
+    val coordinator = remember { AppCoordinator() }
+
     MaterialTheme {
-        HomeScreen()
+        coordinator.Content()
     }
 }
