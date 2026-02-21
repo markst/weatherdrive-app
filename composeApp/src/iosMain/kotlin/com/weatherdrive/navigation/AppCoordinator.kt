@@ -14,47 +14,56 @@ import platform.UIKit.UIViewController
  * iOS implementation of AppCoordinator.
  * Owns a UINavigationController and handles navigation by pushing/popping view controllers.
  * 
- * Usage from Swift:
+ * For Compose usage:
+ * ```kotlin
+ * val coordinator = remember { AppCoordinator() }
+ * coordinator.Content()  // Embeds UINavigationController in Compose
+ * ```
+ * 
+ * For Swift/UIKit usage:
  * ```swift
  * let coordinator = AppCoordinator(navigationController: navigationController)
  * let rootVC = coordinator.start()
+ * navigationController.setViewControllers([rootVC], animated: false)
  * ```
  */
 actual class AppCoordinator(
     private val navigationController: UINavigationController
 ) {
+    private var isInitialized = false
+
     /**
      * No-arg constructor for expect/actual compatibility.
      * Creates coordinator with a new UINavigationController.
      */
     actual constructor() : this(UINavigationController())
 
-    init {
-        // Set the root view controller when coordinator is created
-        val homeVC = ComposeUIViewController {
-            HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
-        }
-        navigationController.setViewControllers(listOf(homeVC), animated = false)
-    }
-
     /**
      * Creates and returns the root HomeScreen view controller.
      * Call this to get the initial view controller for the navigation stack.
+     * Use this for direct UIKit integration.
      */
     fun start(): UIViewController {
-        val homeVC = ComposeUIViewController {
+        return ComposeUIViewController {
             HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
         }
-        return homeVC
     }
 
     /**
      * Composable content that wraps the UINavigationController.
+     * Sets up the root view controller on first composition.
      * This allows the coordinator to be used in a Compose hierarchy on iOS.
      */
     @OptIn(ExperimentalForeignApi::class)
     @Composable
     actual fun Content() {
+        if (!isInitialized) {
+            val homeVC = ComposeUIViewController {
+                HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
+            }
+            navigationController.setViewControllers(listOf(homeVC), animated = false)
+            isInitialized = true
+        }
         UIKitViewController(
             factory = { navigationController },
             modifier = androidx.compose.ui.Modifier
