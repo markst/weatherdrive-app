@@ -22,14 +22,10 @@ actual class AppCoordinator(
     private val navigationController: UINavigationController
 ) {
     /**
-     * Secondary constructor for expect/actual compatibility.
-     * Creates coordinator without navigation controller - use primary constructor instead.
+     * No-arg constructor for expect/actual compatibility.
+     * Creates coordinator with a new UINavigationController.
      */
-    @Suppress("UNUSED_PARAMETER")
-    actual constructor(
-        onShowDetail: (Show) -> Unit,
-        onBack: () -> Unit
-    ) : this(UINavigationController())
+    actual constructor() : this(UINavigationController())
 
     /**
      * Creates and returns the root HomeScreen view controller.

@@ -9,10 +9,7 @@ import com.weatherdrive.model.Show
  * On Android: Owns navigation state and provides Content() composable
  * On iOS: Owns UINavigationController and handles push/pop navigation
  */
-expect class AppCoordinator(
-    onShowDetail: (Show) -> Unit,
-    onBack: () -> Unit
-) {
+expect class AppCoordinator() {
     fun navigateToShowDetail(show: Show)
     fun navigateBack()
 

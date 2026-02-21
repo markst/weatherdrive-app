@@ -20,29 +20,15 @@ private sealed class Screen {
  * Android implementation of AppCoordinator.
  * Owns the navigation state internally and provides a Content composable for embedding.
  */
-actual class AppCoordinator {
+actual class AppCoordinator actual constructor() {
     private var currentScreen: Screen by mutableStateOf(Screen.Home)
-
-    /**
-     * Secondary constructor for expect/actual compatibility.
-     */
-    @Suppress("UNUSED_PARAMETER")
-    actual constructor(
-        onShowDetail: (Show) -> Unit,
-        onBack: () -> Unit
-    ) : this()
-
-    /**
-     * Primary constructor - creates coordinator that owns its navigation state.
-     */
-    constructor()
 
     /**
      * Composable content that renders the current screen.
      * Embed this in your App composable.
      */
     @Composable
-    fun Content() {
+    actual fun Content() {
         when (val screen = currentScreen) {
             is Screen.Home -> HomeScreen(
                 onShowClick = { show -> navigateToShowDetail(show) }
