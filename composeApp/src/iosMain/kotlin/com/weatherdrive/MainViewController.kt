@@ -7,7 +7,13 @@ import androidx.compose.ui.window.ComposeUIViewController
  */
 fun MainViewController() = ComposeUIViewController { App() }
 
-// For native UINavigationController integration on iOS, use:
-// - AppCoordinator.homeViewController(onShowClick:) for the HomeScreen
-// - AppCoordinator.showDetailViewController(show:) for the ShowDetailScreen
-// These are available via the AppCoordinator companion object in the navigation package.
+// For native UINavigationController integration on iOS, use AppCoordinator:
+//
+// ```swift
+// let navigationController = UINavigationController()
+// let coordinator = AppCoordinator(navigationController: navigationController)
+// let rootVC = coordinator.start()
+// navigationController.setViewControllers([rootVC], animated: false)
+// ```
+//
+// The coordinator owns the navigation controller and handles all navigation internally.
