@@ -1,20 +1,64 @@
 package com.weatherdrive.navigation
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.weatherdrive.model.Show
+import com.weatherdrive.ui.HomeScreen
+import com.weatherdrive.ui.ShowDetailScreen
+
+/**
+ * Navigation state representing the current screen.
+ */
+private sealed class Screen {
+    data object Home : Screen()
+    data class ShowDetail(val show: Show) : Screen()
+}
 
 /**
  * Android implementation of AppCoordinator.
- * Uses Compose state-based navigation, managed externally via callbacks.
+ * Owns the navigation state internally and provides a Content composable for embedding.
  */
-actual class AppCoordinator(
-    private val onShowDetail: (Show) -> Unit,
-    private val onBack: () -> Unit
-) {
+actual class AppCoordinator {
+    private var currentScreen: Screen by mutableStateOf(Screen.Home)
+
+    /**
+     * Secondary constructor for expect/actual compatibility.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    actual constructor(
+        onShowDetail: (Show) -> Unit,
+        onBack: () -> Unit
+    ) : this()
+
+    /**
+     * Primary constructor - creates coordinator that owns its navigation state.
+     */
+    constructor()
+
+    /**
+     * Composable content that renders the current screen.
+     * Embed this in your App composable.
+     */
+    @Composable
+    fun Content() {
+        when (val screen = currentScreen) {
+            is Screen.Home -> HomeScreen(
+                onShowClick = { show -> navigateToShowDetail(show) }
+            )
+            is Screen.ShowDetail -> ShowDetailScreen(
+                show = screen.show,
+                onBack = { navigateBack() }
+            )
+        }
+    }
+
     actual fun navigateToShowDetail(show: Show) {
-        onShowDetail(show)
+        currentScreen = Screen.ShowDetail(show)
     }
 
     actual fun navigateBack() {
-        onBack()
+        currentScreen = Screen.Home
     }
 }

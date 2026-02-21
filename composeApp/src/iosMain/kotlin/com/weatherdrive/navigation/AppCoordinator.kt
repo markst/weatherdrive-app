@@ -1,5 +1,6 @@
 package com.weatherdrive.navigation
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.model.Show
 import com.weatherdrive.ui.HomeScreen
@@ -39,6 +40,15 @@ actual class AppCoordinator(
             HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
         }
         return homeVC
+    }
+
+    /**
+     * Composable content - on iOS, use start() instead for UINavigationController integration.
+     * This is provided for expect/actual compatibility.
+     */
+    @Composable
+    actual fun Content() {
+        HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
     }
 
     actual fun navigateToShowDetail(show: Show) {
