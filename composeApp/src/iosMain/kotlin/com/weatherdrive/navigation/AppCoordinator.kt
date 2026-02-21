@@ -1,10 +1,12 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.model.Show
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
@@ -27,6 +29,14 @@ actual class AppCoordinator(
      */
     actual constructor() : this(UINavigationController())
 
+    init {
+        // Set the root view controller when coordinator is created
+        val homeVC = ComposeUIViewController {
+            HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
+        }
+        navigationController.setViewControllers(listOf(homeVC), animated = false)
+    }
+
     /**
      * Creates and returns the root HomeScreen view controller.
      * Call this to get the initial view controller for the navigation stack.
@@ -39,12 +49,16 @@ actual class AppCoordinator(
     }
 
     /**
-     * Composable content - on iOS, use start() instead for UINavigationController integration.
-     * This is provided for expect/actual compatibility.
+     * Composable content that wraps the UINavigationController.
+     * This allows the coordinator to be used in a Compose hierarchy on iOS.
      */
+    @OptIn(ExperimentalForeignApi::class)
     @Composable
     actual fun Content() {
-        HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
+        UIKitViewController(
+            factory = { navigationController },
+            modifier = androidx.compose.ui.Modifier
+        )
     }
 
     actual fun navigateToShowDetail(show: Show) {
