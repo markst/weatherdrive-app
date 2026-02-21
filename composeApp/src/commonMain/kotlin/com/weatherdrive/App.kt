@@ -32,7 +32,10 @@ fun App() {
             is Screen.Home -> HomeScreen(
                 onShowClick = { show -> coordinator.navigateToShowDetail(show) }
             )
-            is Screen.ShowDetail -> ShowDetailScreen(show = screen.show)
+            is Screen.ShowDetail -> ShowDetailScreen(
+                show = screen.show,
+                onBack = { coordinator.navigateBack() }
+            )
         }
     }
 }

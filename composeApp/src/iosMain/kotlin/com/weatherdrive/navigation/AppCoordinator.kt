@@ -39,10 +39,11 @@ actual class AppCoordinator(
         /**
          * Creates a UIViewController for the ShowDetailScreen.
          * @param show The show to display details for
+         * @param onBack Optional callback for back navigation (typically handled by UINavigationController)
          */
-        fun showDetailViewController(show: Show): UIViewController {
+        fun showDetailViewController(show: Show, onBack: () -> Unit = {}): UIViewController {
             return ComposeUIViewController {
-                ShowDetailScreen(show = show)
+                ShowDetailScreen(show = show, onBack = onBack)
             }
         }
     }
