@@ -35,7 +35,10 @@ import com.weatherdrive.viewmodel.HomeViewModel
 import com.weatherdrive.viewmodel.UiState
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = remember { HomeViewModel() }) {
+fun HomeScreen(
+    viewModel: HomeViewModel = remember { HomeViewModel() },
+    onShowClick: (Show) -> Unit = {}
+) {
     val uiState by viewModel.uiState.collectAsState()
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -58,23 +61,23 @@ fun HomeScreen(viewModel: HomeViewModel = remember { HomeViewModel() }) {
                     )
                 }
             } else {
-                ExpandableTree(state.treeNodes)
+                ExpandableTree(state.treeNodes, onShowClick)
             }
         }
     }
 }
 
 @Composable
-private fun ExpandableTree(treeNodes: List<YearNode>) {
+private fun ExpandableTree(treeNodes: List<YearNode>, onShowClick: (Show) -> Unit) {
     LazyColumn {
         items(treeNodes) { yearNode ->
-            YearRow(yearNode)
+            YearRow(yearNode, onShowClick)
         }
     }
 }
 
 @Composable
-private fun YearRow(yearNode: YearNode) {
+private fun YearRow(yearNode: YearNode, onShowClick: (Show) -> Unit) {
     var expanded by remember { mutableStateOf(true) }
 
     Column {
@@ -94,14 +97,14 @@ private fun YearRow(yearNode: YearNode) {
 
         if (expanded) {
             yearNode.children.forEach { categoryNode ->
-                CategoryRow(categoryNode)
+                CategoryRow(categoryNode, onShowClick)
             }
         }
     }
 }
 
 @Composable
-private fun CategoryRow(categoryNode: CategoryNode) {
+private fun CategoryRow(categoryNode: CategoryNode, onShowClick: (Show) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
 
     Column {
@@ -121,17 +124,18 @@ private fun CategoryRow(categoryNode: CategoryNode) {
 
         if (expanded) {
             categoryNode.children.forEach { show ->
-                ShowRow(show)
+                ShowRow(show, onShowClick)
             }
         }
     }
 }
 
 @Composable
-private fun ShowRow(show: Show) {
+private fun ShowRow(show: Show, onShowClick: (Show) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onShowClick(show) }
             .padding(start = 48.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
