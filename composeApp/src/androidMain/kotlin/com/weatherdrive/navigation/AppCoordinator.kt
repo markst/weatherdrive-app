@@ -1,50 +1,85 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.weatherdrive.model.Show
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
+import kotlinx.serialization.Serializable
 
 /**
- * Navigation state representing the current screen.
+ * Navigation routes for the app.
  */
-private sealed class Screen {
-    data object Home : Screen()
-    data class ShowDetail(val show: Show) : Screen()
-}
+@Serializable
+object HomeRoute
+
+@Serializable
+data class ShowDetailRoute(
+    val id: String,
+    val title: String,
+    val thumbnail: String?,
+    val year: String,
+    val category: String
+)
 
 /**
  * Android implementation of AppCoordinator.
- * Owns the navigation state internally and provides a Content composable for embedding.
+ * Uses Jetpack Compose Navigation with NavHost and NavController.
  */
 actual class AppCoordinator actual constructor() {
-    private var currentScreen: Screen by mutableStateOf(Screen.Home)
+    private lateinit var navController: NavHostController
 
     /**
-     * Composable content that renders the current screen.
+     * Composable content that renders the navigation host.
      * Embed this in your App composable.
      */
     @Composable
     actual fun Content() {
-        when (val screen = currentScreen) {
-            is Screen.Home -> HomeScreen(
-                onShowClick = { show -> navigateToShowDetail(show) }
-            )
-            is Screen.ShowDetail -> ShowDetailScreen(
-                show = screen.show,
-                onBack = { navigateBack() }
-            )
+        navController = rememberNavController()
+
+        NavHost(
+            navController = navController,
+            startDestination = HomeRoute
+        ) {
+            composable<HomeRoute> {
+                HomeScreen(
+                    onShowClick = { show -> navigateToShowDetail(show) }
+                )
+            }
+            composable<ShowDetailRoute> { backStackEntry ->
+                val route: ShowDetailRoute = backStackEntry.toRoute()
+                val show = Show(
+                    id = route.id,
+                    title = route.title,
+                    thumbnail = route.thumbnail,
+                    year = route.year,
+                    category = route.category
+                )
+                ShowDetailScreen(
+                    show = show,
+                    onBack = { navigateBack() }
+                )
+            }
         }
     }
 
     actual fun navigateToShowDetail(show: Show) {
-        currentScreen = Screen.ShowDetail(show)
+        navController.navigate(
+            ShowDetailRoute(
+                id = show.id,
+                title = show.title,
+                thumbnail = show.thumbnail,
+                year = show.year,
+                category = show.category
+            )
+        )
     }
 
     actual fun navigateBack() {
-        currentScreen = Screen.Home
+        navController.popBackStack()
     }
 }
