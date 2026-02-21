@@ -12,17 +12,22 @@ import platform.UIKit.UIViewController
  * 
  * Each screen is exposed as a separate UIViewController that can be pushed
  * onto a UINavigationController stack from Swift code.
+ * 
+ * NOTE: The constructor parameters are required for expect/actual compatibility
+ * with the common module declaration, but are unused on iOS as navigation is
+ * handled by UINavigationController. Use the companion object factory methods
+ * for native iOS navigation integration.
  */
 actual class AppCoordinator(
-    private val onShowDetail: (Show) -> Unit,
-    private val onBack: () -> Unit
+    @Suppress("UNUSED_PARAMETER") onShowDetail: (Show) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onBack: () -> Unit
 ) {
     actual fun navigateToShowDetail(show: Show) {
-        onShowDetail(show)
+        // No-op on iOS: UINavigationController handles navigation
     }
 
     actual fun navigateBack() {
-        onBack()
+        // No-op on iOS: UINavigationController handles back navigation
     }
 
     companion object {
