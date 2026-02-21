@@ -1,49 +1,53 @@
 package com.weatherdrive.viewmodel
 
 import com.weatherdrive.model.CategoryNode
+import com.weatherdrive.model.Show
 import com.weatherdrive.model.YearNode
 import com.weatherdrive.network.WeatherdriveApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+sealed class UiState {
+    data object Loading : UiState()
+    data class Success(val treeNodes: List<YearNode>) : UiState()
+    data class Error(val message: String) : UiState()
+}
 
 class HomeViewModel {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val api = WeatherdriveApi()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _treeNodes = MutableStateFlow<List<YearNode>>(emptyList())
-    val treeNodes: StateFlow<List<YearNode>> = _treeNodes.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
-
-    init {
-        loadShows()
+    private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1).also {
+        it.tryEmit(Unit)
     }
 
-    fun loadShows() {
-        scope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val shows = api.fetchShows()
-                _treeNodes.value = buildTree(shows)
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Unknown error"
-            } finally {
-                _isLoading.value = false
+    val uiState: StateFlow<UiState> = refreshTrigger
+        .flatMapLatest {
+            flow {
+                emit(UiState.Loading)
+                try {
+                    val shows = api.fetchShows()
+                    emit(UiState.Success(buildTree(shows)))
+                } catch (e: Exception) {
+                    emit(UiState.Error(e.message ?: "Unknown error"))
+                }
             }
         }
+        .stateIn(scope, SharingStarted.WhileSubscribed(5_000), UiState.Loading)
+
+    fun refresh() {
+        scope.launch { refreshTrigger.emit(Unit) }
     }
 
-    private fun buildTree(shows: List<com.weatherdrive.model.Show>): List<YearNode> {
+    private fun buildTree(shows: List<Show>): List<YearNode> {
         return shows
             .groupBy { it.year }
             .entries

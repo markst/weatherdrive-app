@@ -17,11 +17,18 @@ kotlin {
         }
     }
 
-    jvm("desktop")
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
+        }
+    }
 
     sourceSets {
-        val desktopMain by getting
-
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
@@ -40,19 +47,18 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
         }
-        desktopMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.ktor.client.cio)
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
     }
 }
 
 android {
-    namespace = "com.weatherdrive"
+    namespace = "dev.markturnip.weatherdrive"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.weatherdrive"
+        applicationId = "dev.markturnip.weatherdrive"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

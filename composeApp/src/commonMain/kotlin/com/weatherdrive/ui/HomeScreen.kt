@@ -32,32 +32,34 @@ import com.weatherdrive.model.CategoryNode
 import com.weatherdrive.model.Show
 import com.weatherdrive.model.YearNode
 import com.weatherdrive.viewmodel.HomeViewModel
+import com.weatherdrive.viewmodel.UiState
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel = remember { HomeViewModel() }) {
-    val treeNodes by viewModel.treeNodes.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     Surface(modifier = Modifier.fillMaxSize()) {
-        when {
-            isLoading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        when (val state = uiState) {
+            is UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            error != null -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            is UiState.Error -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Error: $error",
+                    text = "Error: ${state.message}",
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.error
                 )
             }
-            treeNodes.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "No shows found.",
-                    modifier = Modifier.padding(16.dp)
-                )
+            is UiState.Success -> if (state.treeNodes.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "No shows found.",
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                ExpandableTree(state.treeNodes)
             }
-            else -> ExpandableTree(treeNodes)
         }
     }
 }

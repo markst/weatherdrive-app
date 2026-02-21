@@ -6,9 +6,16 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-private const val API_URL = "https://www.flightpathestate.com/api/drvr/2026-02-07"
+private const val BASE_URL = "https://www.flightpathestate.com/api"
+
+@Serializable
+data class TokenResponse(
+    val success: Boolean = false,
+    val date: String = ""
+)
 
 class WeatherdriveApi {
     private val client = HttpClient {
@@ -20,11 +27,12 @@ class WeatherdriveApi {
         }
     }
 
+    private suspend fun fetchDate(): String {
+        return client.get("$BASE_URL/token").body<TokenResponse>().date
+    }
+
     suspend fun fetchShows(): List<Show> {
-        return try {
-            client.get(API_URL).body()
-        } catch (e: Exception) {
-            emptyList()
-        }
+        val date = fetchDate()
+        return client.get("$BASE_URL/drvr/$date").body()
     }
 }
