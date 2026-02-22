@@ -11,7 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.weatherdrive.di.ServiceLocator
+import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.Show
 import com.weatherdrive.navigation.routes.HomeRoute
@@ -22,6 +22,7 @@ import com.weatherdrive.ui.DownloadStatus
 import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
+import org.koin.mp.KoinPlatform.getKoin
 
 /**
  * Android implementation of AppCoordinator.
@@ -29,7 +30,7 @@ import com.weatherdrive.ui.ShowDetailScreen
  */
 actual class AppCoordinator actual constructor() {
     private var navController: NavHostController? by mutableStateOf(null)
-    private val downloadManager = ServiceLocator.provideDownloadManager()
+    private val downloadManager: DownloadManager = getKoin().get()
 
     /**
      * Composable content that renders the navigation host.
