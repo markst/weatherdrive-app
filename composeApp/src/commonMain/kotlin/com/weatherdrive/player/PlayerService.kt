@@ -20,7 +20,7 @@ data class PlaybackUiState(
 )
 
 /**
- * Interstitial player service that owns the PlatformMediaPlayer and manages subscriptions.
+ * Intermediary player service that owns the PlatformMediaPlayer and manages subscriptions.
  * Can be shared across multiple view models for audio playback.
  */
 class PlayerService(
