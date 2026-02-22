@@ -35,6 +35,7 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation(libs.koin.android)
             implementation("dev.markturnip.radioplayer:radioplayer")
+            implementation("dev.markturnip.expandable:expandable")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -58,6 +59,7 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation("dev.markturnip.radioplayer:radioplayer")
+            implementation("dev.markturnip.expandable:expandable")
         }
     }
 }
