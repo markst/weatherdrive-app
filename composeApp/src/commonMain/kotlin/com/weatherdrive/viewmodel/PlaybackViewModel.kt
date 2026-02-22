@@ -6,9 +6,6 @@ import dev.markturnip.radioplayer.MediaPlayerItem
 import dev.markturnip.radioplayer.PlaybackState
 import dev.markturnip.radioplayer.PlatformMediaPlayer
 import dev.markturnip.radioplayer.Progress
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,8 +42,6 @@ private class FileItemMediaPlayer(
 class PlaybackViewModel(
     private val mediaPlayer: PlatformMediaPlayer
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    
     private val _playbackState = MutableStateFlow(PlaybackUiState())
     val playbackState: StateFlow<PlaybackUiState> = _playbackState.asStateFlow()
     

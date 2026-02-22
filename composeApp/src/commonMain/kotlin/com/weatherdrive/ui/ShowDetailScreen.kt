@@ -259,14 +259,14 @@ private fun FileItemCard(
                     }
                     DownloadStatus.COMPLETED -> {
                         Text(
-                            text = "✓",
+                            text = "✓ Downloaded",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
                     DownloadStatus.FAILED -> {
                         Text(
-                            text = "✗",
+                            text = "✗ Failed",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.error
                         )
