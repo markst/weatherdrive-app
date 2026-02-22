@@ -43,9 +43,9 @@ sealed class DownloadProgressState {
  * Tracks download progress for multiple files identified by googleDriveId.
  */
 class DownloadManager(
-    private val downloadDirectory: String,
     private val api: WeatherdriveApi = WeatherdriveApi()
 ) {
+    private val downloadDirectory: String = getDownloadDirectory()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val ketch = Ketch(
@@ -224,5 +224,19 @@ class DownloadManager(
 
     fun close() {
         ketch.close()
+    }
+
+    /**
+     * Gets the local file path for a downloaded file.
+     * Returns null if the file is not downloaded or download is not completed.
+     */
+    fun getLocalFilePath(fileItem: FileItem): String? {
+        val downloadProgress = _downloads.value[fileItem.googleDriveId]
+        return if (downloadProgress?.state == DownloadProgressState.Completed) {
+            val filename = generateFilename(fileItem)
+            "$downloadDirectory/$filename"
+        } else {
+            null
+        }
     }
 }

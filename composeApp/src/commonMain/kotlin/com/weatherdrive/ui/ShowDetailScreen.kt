@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,19 +30,30 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.Show
+import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
+import com.weatherdrive.util.formatTime
+import com.weatherdrive.viewmodel.ShowDetailViewModel
+import dev.markturnip.radioplayer.PlaybackState
+import dev.markturnip.radioplayer.Progress
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /**
- * Represents the current state of a download operation.
+ * Represents the current state of a download operation for UI display.
  */
 enum class DownloadStatus {
     IDLE,
@@ -64,15 +76,51 @@ data class DownloadUiState(
     val error: String? = null
 )
 
+/**
+ * Maps internal DownloadProgressState to UI DownloadStatus enum.
+ */
+private fun DownloadProgressState?.toDownloadStatus(): DownloadStatus {
+    return when (this) {
+        is DownloadProgressState.Idle -> DownloadStatus.IDLE
+        is DownloadProgressState.Pending -> DownloadStatus.PENDING
+        is DownloadProgressState.Downloading -> DownloadStatus.DOWNLOADING
+        is DownloadProgressState.Paused -> DownloadStatus.PAUSED
+        is DownloadProgressState.Completed -> DownloadStatus.COMPLETED
+        is DownloadProgressState.Failed -> DownloadStatus.FAILED
+        null -> DownloadStatus.IDLE
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetailScreen(
     show: Show,
-    downloadStates: Map<String, DownloadUiState> = emptyMap(),
-    onBack: () -> Unit = {},
-    onDownloadClick: (FileItem) -> Unit = {},
-    onCancelClick: (FileItem) -> Unit = {}
+    onBack: () -> Unit = {}
 ) {
+    val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
+    
+    DisposableEffect(show.id) {
+        onDispose {
+            viewModel.stop()
+        }
+    }
+    
+    val playbackState by viewModel.playbackState.collectAsState()
+    val downloads by viewModel.downloadManager.downloads.collectAsState()
+    
+    // Map download progress to UI state
+    val downloadStates = show.filelist.associate { fileItem ->
+        val downloadProgress = downloads[fileItem.googleDriveId]
+        fileItem.googleDriveId to DownloadUiState(
+            status = downloadProgress?.state.toDownloadStatus(),
+            progress = downloadProgress?.progress ?: 0f,
+            bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
+            downloadedBytes = downloadProgress?.downloadedBytes ?: 0,
+            totalBytes = downloadProgress?.totalBytes ?: 0,
+            error = downloadProgress?.error
+        )
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -133,7 +181,7 @@ fun ShowDetailScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
-                        text = "Available Downloads",
+                        text = "Available Files",
                         style = MaterialTheme.typography.titleLarge
                     )
 
@@ -143,11 +191,16 @@ fun ShowDetailScreen(
 
             items(show.filelist) { fileItem ->
                 val downloadState = downloadStates[fileItem.googleDriveId] ?: DownloadUiState()
+                val isCurrentlyPlaying = playbackState.currentFileId == fileItem.googleDriveId
                 FileItemCard(
                     fileItem = fileItem,
                     downloadState = downloadState,
-                    onDownloadClick = { onDownloadClick(fileItem) },
-                    onCancelClick = { onCancelClick(fileItem) }
+                    isCurrentlyPlaying = isCurrentlyPlaying,
+                    playbackState = if (isCurrentlyPlaying) playbackState else null,
+                    onDownloadClick = { viewModel.startDownload(fileItem) },
+                    onCancelClick = { viewModel.cancelDownload(fileItem) },
+                    onPlayClick = { viewModel.playFile(fileItem) },
+                    onPauseClick = { viewModel.togglePlayPause() }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -159,12 +212,23 @@ fun ShowDetailScreen(
 private fun FileItemCard(
     fileItem: FileItem,
     downloadState: DownloadUiState,
+    isCurrentlyPlaying: Boolean,
+    playbackState: PlaybackUiState?,
     onDownloadClick: () -> Unit,
-    onCancelClick: () -> Unit
+    onCancelClick: () -> Unit,
+    onPlayClick: () -> Unit,
+    onPauseClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = if (isCurrentlyPlaying) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        } else {
+            CardDefaults.cardColors()
+        }
     ) {
         Column(
             modifier = Modifier
@@ -191,6 +255,14 @@ private fun FileItemCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                PlaybackControlButton(
+                    isCurrentlyPlaying = isCurrentlyPlaying,
+                    playbackState = playbackState,
+                    onPlayClick = onPlayClick,
+                    onPauseClick = onPauseClick
+                )
+
+                // Download controls
                 when (downloadState.status) {
                     DownloadStatus.DOWNLOADING, DownloadStatus.PENDING -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -215,25 +287,22 @@ private fun FileItemCard(
                         )
                     }
                     DownloadStatus.FAILED -> {
-                        IconButton(onClick = onDownloadClick) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Retry Download",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
+                        Text(
+                            text = "✗ Failed",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
-                    else -> {
-                        IconButton(onClick = onDownloadClick) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Download"
-                            )
-                        }
-                    }
+                    else -> { /* No download indicator for IDLE/PAUSED */ }
                 }
             }
 
+            // Playback progress
+            if (isCurrentlyPlaying && playbackState?.progress != null) {
+                PlaybackProgressIndicator(progress = playbackState.progress)
+            }
+
+            // Download progress
             if (downloadState.status == DownloadStatus.DOWNLOADING || 
                 downloadState.status == DownloadStatus.PAUSED) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -267,6 +336,74 @@ private fun FileItemCard(
                     color = MaterialTheme.colorScheme.error
                 )
             }
+        }
+    }
+}
+
+/**
+ * Composable displaying playback control button (play/pause/buffering).
+ */
+@Composable
+private fun PlaybackControlButton(
+    isCurrentlyPlaying: Boolean,
+    playbackState: PlaybackUiState?,
+    onPlayClick: () -> Unit,
+    onPauseClick: () -> Unit
+) {
+    when {
+        isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.BUFFERING -> {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
+        }
+        isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.PLAYING -> {
+            IconButton(onClick = onPauseClick) {
+                Icon(
+                    imageVector = Icons.Default.Pause,
+                    contentDescription = "Pause",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        else -> {
+            IconButton(onClick = onPlayClick) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play"
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Composable displaying playback progress with elapsed and duration times.
+ */
+@Composable
+private fun PlaybackProgressIndicator(progress: Progress) {
+    if (progress.duration > 0) {
+        Spacer(modifier = Modifier.height(12.dp))
+        LinearProgressIndicator(
+            progress = { (progress.elapsed / progress.duration).toFloat() },
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = progress.elapsed.formatTime(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = progress.duration.formatTime(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

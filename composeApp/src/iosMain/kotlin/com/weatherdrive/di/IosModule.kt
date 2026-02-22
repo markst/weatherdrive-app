@@ -10,9 +10,9 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
- * Android-specific Koin module providing platform dependencies.
+ * iOS-specific Koin module providing platform dependencies.
  */
-val androidModule = module {
+val iosModule = module {
     single { DownloadManager(get<WeatherdriveApi>()) }
     single { PlatformMediaPlayer() }
     single { PlayerService(get()) }

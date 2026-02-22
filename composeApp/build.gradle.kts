@@ -33,9 +33,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.navigation.compose)
-            implementation(libs.ketch.core)
-            implementation(libs.ketch.ktor)
             implementation(libs.koin.android)
+            implementation("dev.markturnip.radioplayer:radioplayer")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -52,9 +51,13 @@ kotlin {
             implementation(libs.coil.network.ktor)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
+            implementation(libs.ketch.core)
+            implementation(libs.ketch.ktor)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation("dev.markturnip.radioplayer:radioplayer")
         }
     }
 }

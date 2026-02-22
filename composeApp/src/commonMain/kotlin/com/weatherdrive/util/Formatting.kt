@@ -36,6 +36,16 @@ fun Long.formatSpeed(): String {
 }
 
 /**
+ * Format seconds to MM:SS display format.
+ */
+fun Double.formatTime(): String {
+    val totalSeconds = this.toInt()
+    val minutes = totalSeconds / 60
+    val secs = totalSeconds % 60
+    return "%d:%02d".format(minutes, secs)
+}
+
+/**
  * Sanitizes a string to be used as part of a filename by removing special characters.
  */
 fun String.sanitizeForFilename(): String {

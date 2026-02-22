@@ -1,0 +1,3 @@
+[submodule "radioplayer-kt"]
+	path = radioplayer-kt
+	url = https://github.com/markst/radioplayer-kt.git
