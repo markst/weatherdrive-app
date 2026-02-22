@@ -8,14 +8,15 @@ import com.linroid.ketch.core.Ketch
 import com.linroid.ketch.core.QueueConfig
 import com.linroid.ketch.ktor.KtorHttpEngine
 import com.weatherdrive.model.FileItem
-import com.weatherdrive.network.FileAccessResponse
 import com.weatherdrive.network.WeatherdriveApi
+import com.weatherdrive.util.sanitizeForFilename
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class DownloadProgress(
@@ -37,11 +38,15 @@ sealed class DownloadProgressState {
     data object Failed : DownloadProgressState()
 }
 
+/**
+ * Manages file downloads using Ketch library.
+ * Tracks download progress for multiple files identified by googleDriveId.
+ */
 class DownloadManager(
-    private val downloadDirectory: String
+    private val downloadDirectory: String,
+    private val api: WeatherdriveApi = WeatherdriveApi()
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val api = WeatherdriveApi()
 
     private val ketch = Ketch(
         httpEngine = KtorHttpEngine(),
@@ -59,107 +64,142 @@ class DownloadManager(
     fun startDownload(fileItem: FileItem) {
         scope.launch {
             try {
-                // Update state to pending
-                updateDownloadState(fileItem, DownloadProgressState.Pending, progress = 0f)
-
-                // Fetch the file access token
-                val fileAccess: FileAccessResponse = api.fetchFileAccess(fileItem.googleDriveId)
-
-                // Build the download URL with authorization
-                val downloadUrl = fileAccess.url
-                val accessToken = fileAccess.credentials.accessToken
-
-                // Generate filename with sanitized title
-                val sanitizedTitle = fileItem.title.replace(Regex("[^a-zA-Z0-9\\s-]"), "").trim()
-                val filename = "${fileItem.googleDriveId}_$sanitizedTitle.mp3"
-
-                // Create download request with authorization header
-                val request = DownloadRequest(
-                    url = downloadUrl,
-                    directory = downloadDirectory,
-                    filename = filename,
-                    headers = mapOf("Authorization" to "Bearer $accessToken")
-                )
-
-                val task = ketch.download(request)
-                activeTasks[fileItem.googleDriveId] = task
-
-                // Observe task state
-                scope.launch {
-                    task.state.collect { state ->
-                        handleTaskState(fileItem, state)
-                    }
-                }
+                setDownloadPending(fileItem)
+                val (downloadUrl, accessToken) = fetchFileAccessInfo(fileItem.googleDriveId)
+                val filename = generateFilename(fileItem)
+                startKetchDownload(fileItem, downloadUrl, accessToken, filename)
             } catch (e: Exception) {
-                updateDownloadState(
-                    fileItem,
-                    DownloadProgressState.Failed,
-                    progress = 0f,
-                    error = e.message ?: "Unknown error"
-                )
+                setDownloadFailed(fileItem, e.message ?: "Unknown error")
             }
         }
     }
 
+    private suspend fun fetchFileAccessInfo(googleDriveId: String): Pair<String, String> {
+        val fileAccess = api.fetchFileAccess(googleDriveId)
+        // Append alt=media parameter for direct file download from Google Drive
+        val downloadUrl = if (fileAccess.url.contains("?")) {
+            "${fileAccess.url}&alt=media"
+        } else {
+            "${fileAccess.url}?alt=media"
+        }
+        return downloadUrl to fileAccess.credentials.accessToken
+    }
+
+    private fun generateFilename(fileItem: FileItem): String {
+        val sanitizedTitle = fileItem.title.sanitizeForFilename()
+        return "${fileItem.googleDriveId}_$sanitizedTitle.mp3"
+    }
+
+    private suspend fun startKetchDownload(
+        fileItem: FileItem,
+        downloadUrl: String,
+        accessToken: String,
+        filename: String
+    ) {
+        val request = DownloadRequest(
+            url = downloadUrl,
+            directory = downloadDirectory,
+            filename = filename,
+            headers = mapOf("Authorization" to "Bearer $accessToken")
+        )
+
+        val task = ketch.download(request)
+        activeTasks[fileItem.googleDriveId] = task
+
+        scope.launch {
+            task.state.collect { state ->
+                handleTaskState(fileItem, state)
+            }
+        }
+    }
+
+    private fun setDownloadPending(fileItem: FileItem) {
+        updateDownload(fileItem.googleDriveId) {
+            DownloadProgress(
+                fileItem = fileItem,
+                state = DownloadProgressState.Pending,
+                progress = 0f
+            )
+        }
+    }
+
+    private fun setDownloadFailed(fileItem: FileItem, error: String) {
+        updateDownload(fileItem.googleDriveId) {
+            DownloadProgress(
+                fileItem = fileItem,
+                state = DownloadProgressState.Failed,
+                progress = 0f,
+                error = error
+            )
+        }
+    }
+
+    /**
+     * Transforms internal Ketch DownloadState into our own DownloadProgressState.
+     * This allows us to decouple our UI state from the library's internal state representation.
+     */
     private fun handleTaskState(fileItem: FileItem, state: DownloadState) {
         when (state) {
             is DownloadState.Pending -> {
-                updateDownloadState(fileItem, DownloadProgressState.Pending)
+                updateDownload(fileItem.googleDriveId) { current ->
+                    (current ?: DownloadProgress(fileItem = fileItem)).copy(
+                        state = DownloadProgressState.Pending
+                    )
+                }
             }
             is DownloadState.Downloading -> {
                 val progress = state.progress
-                _downloads.value = _downloads.value + (fileItem.googleDriveId to DownloadProgress(
-                    fileItem = fileItem,
-                    state = DownloadProgressState.Downloading,
-                    progress = progress.percent,
-                    bytesPerSecond = progress.bytesPerSecond,
-                    downloadedBytes = progress.downloadedBytes,
-                    totalBytes = progress.totalBytes
-                ))
+                updateDownload(fileItem.googleDriveId) {
+                    DownloadProgress(
+                        fileItem = fileItem,
+                        state = DownloadProgressState.Downloading,
+                        progress = progress.percent,
+                        bytesPerSecond = progress.bytesPerSecond,
+                        downloadedBytes = progress.downloadedBytes,
+                        totalBytes = progress.totalBytes
+                    )
+                }
             }
             is DownloadState.Paused -> {
-                updateDownloadState(fileItem, DownloadProgressState.Paused)
+                updateDownload(fileItem.googleDriveId) { current ->
+                    (current ?: DownloadProgress(fileItem = fileItem)).copy(
+                        state = DownloadProgressState.Paused
+                    )
+                }
             }
             is DownloadState.Completed -> {
-                updateDownloadState(fileItem, DownloadProgressState.Completed, progress = 1f)
+                updateDownload(fileItem.googleDriveId) { current ->
+                    (current ?: DownloadProgress(fileItem = fileItem)).copy(
+                        state = DownloadProgressState.Completed,
+                        progress = 1f
+                    )
+                }
                 activeTasks.remove(fileItem.googleDriveId)
             }
             is DownloadState.Failed -> {
-                updateDownloadState(
-                    fileItem,
-                    DownloadProgressState.Failed,
-                    error = state.error.message
-                )
+                updateDownload(fileItem.googleDriveId) { current ->
+                    (current ?: DownloadProgress(fileItem = fileItem)).copy(
+                        state = DownloadProgressState.Failed,
+                        error = state.error.message
+                    )
+                }
                 activeTasks.remove(fileItem.googleDriveId)
             }
             else -> {}
         }
     }
 
-    private fun updateDownloadState(
-        fileItem: FileItem,
-        state: DownloadProgressState,
-        progress: Float? = null,
-        error: String? = null
+    /**
+     * Updates the download state for a specific googleDriveId using StateFlow.update
+     * for thread-safe state mutations.
+     */
+    private fun updateDownload(
+        googleDriveId: String,
+        transform: (DownloadProgress?) -> DownloadProgress
     ) {
-        val currentProgress = _downloads.value[fileItem.googleDriveId]
-        // For failed or cancelled states, reset progress to 0 if not explicitly provided
-        val shouldPreserveProgress = state != DownloadProgressState.Failed && 
-                                     state != DownloadProgressState.Idle
-        val newProgress = progress ?: if (shouldPreserveProgress) {
-            currentProgress?.progress ?: 0f
-        } else {
-            0f
+        _downloads.update { currentMap ->
+            currentMap + (googleDriveId to transform(currentMap[googleDriveId]))
         }
-        
-        _downloads.value = _downloads.value + (fileItem.googleDriveId to DownloadProgress(
-            fileItem = fileItem,
-            state = state,
-            progress = newProgress,
-            downloadedBytes = if (shouldPreserveProgress) currentProgress?.downloadedBytes ?: 0 else 0,
-            totalBytes = if (shouldPreserveProgress) currentProgress?.totalBytes ?: 0 else 0,
-            error = error
-        ))
     }
 
     fun pauseDownload(fileItem: FileItem) {
@@ -178,7 +218,7 @@ class DownloadManager(
         scope.launch {
             activeTasks[fileItem.googleDriveId]?.cancel()
             activeTasks.remove(fileItem.googleDriveId)
-            _downloads.value = _downloads.value - fileItem.googleDriveId
+            _downloads.update { it - fileItem.googleDriveId }
         }
     }
 

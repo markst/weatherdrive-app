@@ -37,13 +37,27 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.Show
+import com.weatherdrive.util.formatInfo
+import com.weatherdrive.util.formatSpeed
 
+/**
+ * Represents the current state of a download operation.
+ */
+enum class DownloadStatus {
+    IDLE,
+    PENDING,
+    DOWNLOADING,
+    PAUSED,
+    COMPLETED,
+    FAILED
+}
+
+/**
+ * UI state for displaying download progress.
+ */
 data class DownloadUiState(
+    val status: DownloadStatus = DownloadStatus.IDLE,
     val progress: Float = 0f,
-    val isDownloading: Boolean = false,
-    val isCompleted: Boolean = false,
-    val isFailed: Boolean = false,
-    val isPaused: Boolean = false,
     val bytesPerSecond: Long = 0,
     val downloadedBytes: Long = 0,
     val totalBytes: Long = 0,
@@ -169,7 +183,7 @@ private fun FileItemCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = formatFileInfo(fileItem),
+                        text = fileItem.formatInfo(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -177,8 +191,8 @@ private fun FileItemCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                when {
-                    downloadState.isDownloading -> {
+                when (downloadState.status) {
+                    DownloadStatus.DOWNLOADING, DownloadStatus.PENDING -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
@@ -193,14 +207,14 @@ private fun FileItemCard(
                             }
                         }
                     }
-                    downloadState.isCompleted -> {
+                    DownloadStatus.COMPLETED -> {
                         Text(
                             text = "✓ Downloaded",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    downloadState.isFailed -> {
+                    DownloadStatus.FAILED -> {
                         IconButton(onClick = onDownloadClick) {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
@@ -220,7 +234,8 @@ private fun FileItemCard(
                 }
             }
 
-            if (downloadState.isDownloading || downloadState.isPaused) {
+            if (downloadState.status == DownloadStatus.DOWNLOADING || 
+                downloadState.status == DownloadStatus.PAUSED) {
                 Spacer(modifier = Modifier.height(12.dp))
                 LinearProgressIndicator(
                     progress = { downloadState.progress },
@@ -237,14 +252,14 @@ private fun FileItemCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = formatSpeed(downloadState.bytesPerSecond),
+                        text = downloadState.bytesPerSecond.formatSpeed(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            if (downloadState.isFailed && downloadState.error != null) {
+            if (downloadState.status == DownloadStatus.FAILED && downloadState.error != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Error: ${downloadState.error}",
@@ -253,29 +268,5 @@ private fun FileItemCard(
                 )
             }
         }
-    }
-}
-
-private fun formatFileInfo(fileItem: FileItem): String {
-    val duration = formatDuration(fileItem.timeInSeconds)
-    return "${fileItem.fileSizeInMB} MB • $duration"
-}
-
-private fun formatDuration(seconds: Int): String {
-    val hours = seconds / 3600
-    val minutes = (seconds % 3600) / 60
-    val secs = seconds % 60
-    return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, secs)
-    } else {
-        String.format("%d:%02d", minutes, secs)
-    }
-}
-
-private fun formatSpeed(bytesPerSecond: Long): String {
-    return when {
-        bytesPerSecond >= 1_000_000 -> String.format("%.1f MB/s", bytesPerSecond / 1_000_000.0)
-        bytesPerSecond >= 1_000 -> String.format("%.1f KB/s", bytesPerSecond / 1_000.0)
-        else -> "$bytesPerSecond B/s"
     }
 }

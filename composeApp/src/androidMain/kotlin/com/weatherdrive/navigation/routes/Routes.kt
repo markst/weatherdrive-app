@@ -19,10 +19,8 @@ data class ShowDetailRoute(
     val thumbnail: String?,
     val year: String,
     val category: String,
-    val filelistJson: String = "[]"
+    val filelist: List<FileItem> = emptyList()
 )
-
-private val json = Json { ignoreUnknownKeys = true }
 
 /**
  * Extension function to convert a Show to a ShowDetailRoute.
@@ -33,7 +31,7 @@ fun Show.toRoute(): ShowDetailRoute = ShowDetailRoute(
     thumbnail = thumbnail,
     year = year,
     category = category,
-    filelistJson = json.encodeToString(filelist)
+    filelist = filelist
 )
 
 /**
@@ -45,5 +43,5 @@ fun ShowDetailRoute.toShow(): Show = Show(
     thumbnail = thumbnail,
     year = year,
     category = category,
-    filelist = json.decodeFromString(filelistJson)
+    filelist = filelist
 )
