@@ -1,6 +1,8 @@
 package com.weatherdrive
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,11 +43,20 @@ fun App() {
         ) {
             coordinator.Content()
             
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = handler.transparency))
-            )
+            // Overlay that blocks interaction when player is expanded
+            if (handler.transparency > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = handler.transparency))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            handler.collapse(animated = true)
+                        }
+                )
+            }
 
             PlayerView(
                 modifier = Modifier
