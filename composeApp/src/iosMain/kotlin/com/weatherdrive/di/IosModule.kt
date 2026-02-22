@@ -18,7 +18,8 @@ val iosModule = module {
         ShowDetailViewModel(
             show = show,
             playerService = get(),
-            getLocalFilePath = { null } // iOS doesn't have download manager yet
+            // TODO: Implement iOS download manager and pass getLocalFilePath here
+            getLocalFilePath = { null }
         )
     }
 }
