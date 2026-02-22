@@ -1,34 +1,77 @@
 package com.weatherdrive.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.Show
+import com.weatherdrive.util.formatInfo
+import com.weatherdrive.util.formatSpeed
+
+/**
+ * Represents the current state of a download operation.
+ */
+enum class DownloadStatus {
+    IDLE,
+    PENDING,
+    DOWNLOADING,
+    PAUSED,
+    COMPLETED,
+    FAILED
+}
+
+/**
+ * UI state for displaying download progress.
+ */
+data class DownloadUiState(
+    val status: DownloadStatus = DownloadStatus.IDLE,
+    val progress: Float = 0f,
+    val bytesPerSecond: Long = 0,
+    val downloadedBytes: Long = 0,
+    val totalBytes: Long = 0,
+    val error: String? = null
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetailScreen(
     show: Show,
-    onBack: () -> Unit = {}
+    downloadStates: Map<String, DownloadUiState> = emptyMap(),
+    onBack: () -> Unit = {},
+    onDownloadClick: (FileItem) -> Unit = {},
+    onCancelClick: (FileItem) -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -45,45 +88,185 @@ fun ShowDetailScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            if (!show.thumbnail.isNullOrBlank()) {
-                AsyncImage(
-                    model = show.thumbnail,
-                    contentDescription = show.title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(MaterialTheme.shapes.medium),
-                    contentScale = ContentScale.Crop
+            item {
+                if (!show.thumbnail.isNullOrBlank()) {
+                    AsyncImage(
+                        model = show.thumbnail,
+                        contentDescription = show.title,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f)
+                            .clip(MaterialTheme.shapes.medium),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                Text(
+                    text = show.title,
+                    style = MaterialTheme.typography.headlineMedium
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Year: ${show.year}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Category: ${show.category.replaceFirstChar { it.uppercase() }}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (show.filelist.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = "Available Downloads",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
 
-            Text(
-                text = show.title,
-                style = MaterialTheme.typography.headlineMedium
-            )
+            items(show.filelist) { fileItem ->
+                val downloadState = downloadStates[fileItem.googleDriveId] ?: DownloadUiState()
+                FileItemCard(
+                    fileItem = fileItem,
+                    downloadState = downloadState,
+                    onDownloadClick = { onDownloadClick(fileItem) },
+                    onCancelClick = { onCancelClick(fileItem) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(8.dp))
+@Composable
+private fun FileItemCard(
+    fileItem: FileItem,
+    downloadState: DownloadUiState,
+    onDownloadClick: () -> Unit,
+    onCancelClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = fileItem.title,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = fileItem.formatInfo(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-            Text(
-                text = "Year: ${show.year}",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Spacer(modifier = Modifier.width(8.dp))
 
-            Spacer(modifier = Modifier.height(4.dp))
+                when (downloadState.status) {
+                    DownloadStatus.DOWNLOADING, DownloadStatus.PENDING -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(onClick = onCancelClick) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Cancel"
+                                )
+                            }
+                        }
+                    }
+                    DownloadStatus.COMPLETED -> {
+                        Text(
+                            text = "✓ Downloaded",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    DownloadStatus.FAILED -> {
+                        IconButton(onClick = onDownloadClick) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Retry Download",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    else -> {
+                        IconButton(onClick = onDownloadClick) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Download"
+                            )
+                        }
+                    }
+                }
+            }
 
-            Text(
-                text = "Category: ${show.category.replaceFirstChar { it.uppercase() }}",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (downloadState.status == DownloadStatus.DOWNLOADING || 
+                downloadState.status == DownloadStatus.PAUSED) {
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    progress = { downloadState.progress },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "${(downloadState.progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = downloadState.bytesPerSecond.formatSpeed(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (downloadState.status == DownloadStatus.FAILED && downloadState.error != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Error: ${downloadState.error}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }
