@@ -7,14 +7,9 @@ import org.koin.core.context.GlobalContext.getKoinApplicationOrNull
 import org.koin.core.context.startKoin
 
 /**
- * Main entry point for iOS. Creates the default App UIViewController.
+ * Initialize Koin for iOS. Call this before using any Koin-injected dependencies.
  */
-fun MainViewController() = ComposeUIViewController {
-    initKoin()
-    App()
-}
-
-private fun initKoin() {
+fun initKoin() {
     if (getKoinApplicationOrNull() == null) {
         startKoin {
             modules(commonModule, iosModule)
@@ -22,9 +17,20 @@ private fun initKoin() {
     }
 }
 
+/**
+ * Main entry point for iOS. Creates the default App UIViewController.
+ * Note: Call initKoin() in your AppDelegate before using this.
+ */
+fun MainViewController() = ComposeUIViewController {
+    App()
+}
+
 // For native UINavigationController integration on iOS, use AppCoordinator:
 //
 // ```swift
+// // In AppDelegate or early initialization:
+// MainViewControllerKt.initKoin()
+//
 // let navigationController = UINavigationController()
 // let coordinator = AppCoordinator(navigationController: navigationController)
 // let rootVC = coordinator.start()

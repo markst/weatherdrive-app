@@ -11,17 +11,13 @@ import kotlinx.coroutines.flow.StateFlow
  * Adapter to convert FileItem to MediaPlayerItem.
  */
 private class FileItemMediaPlayer(
-    private val fileItem: FileItem,
-    private val show: Show,
-    private val localFilePath: String?
-) : MediaPlayerItem {
-    override val id: String = fileItem.googleDriveId
-    override val title: String = fileItem.title
-    override val artist: String = show.title
-    override val url: String = localFilePath ?: ""
-    override val isLive: Boolean = false
-    override val artworkUrl: String? = show.thumbnail
-}
+    override val id: String,
+    override val title: String,
+    override val artist: String,
+    override val url: String,
+    override val isLive: Boolean,
+    override val artworkUrl: String?
+) : MediaPlayerItem
 
 /**
  * ViewModel for the ShowDetailScreen managing playback state.
@@ -35,13 +31,19 @@ class ShowDetailViewModel(
     
     /**
      * Play a file item using its local file path.
+     * Only plays if the file has been downloaded.
      */
     fun playFile(fileItem: FileItem) {
-        val localPath = getLocalFilePath(fileItem)
-        if (localPath != null) {
-            val mediaItem = FileItemMediaPlayer(fileItem, show, localPath)
-            playerService.playItem(mediaItem)
-        }
+        val localPath = getLocalFilePath(fileItem) ?: return
+        val mediaItem = FileItemMediaPlayer(
+            id = fileItem.googleDriveId,
+            title = fileItem.title,
+            artist = show.title,
+            url = localPath,
+            isLive = false,
+            artworkUrl = show.thumbnail
+        )
+        playerService.playItem(mediaItem)
     }
     
     /**
