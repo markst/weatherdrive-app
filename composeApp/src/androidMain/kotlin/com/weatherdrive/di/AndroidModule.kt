@@ -3,6 +3,7 @@ package com.weatherdrive.di
 import android.os.Environment
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.network.WeatherdriveApi
+import com.weatherdrive.player.PlayerService
 import dev.markturnip.radioplayer.PlatformMediaPlayer
 import org.koin.dsl.module
 
@@ -17,4 +18,5 @@ val androidModule = module {
         DownloadManager(downloadDir, get<WeatherdriveApi>())
     }
     single { PlatformMediaPlayer() }
+    single { PlayerService(get()) }
 }

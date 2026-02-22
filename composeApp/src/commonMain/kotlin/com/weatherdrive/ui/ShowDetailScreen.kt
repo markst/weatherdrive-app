@@ -30,6 +30,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,11 +39,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.weatherdrive.model.FileItem
-import com.weatherdrive.model.Show
+import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
 import com.weatherdrive.util.formatTime
-import com.weatherdrive.viewmodel.PlaybackUiState
+import com.weatherdrive.viewmodel.ShowDetailViewModel
 import dev.markturnip.radioplayer.PlaybackState
 import dev.markturnip.radioplayer.Progress
 
@@ -72,15 +74,15 @@ data class DownloadUiState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetailScreen(
-    show: Show,
+    viewModel: ShowDetailViewModel,
     downloadStates: Map<String, DownloadUiState> = emptyMap(),
-    playbackState: PlaybackUiState = PlaybackUiState(),
     onBack: () -> Unit = {},
     onDownloadClick: (FileItem) -> Unit = {},
-    onCancelClick: (FileItem) -> Unit = {},
-    onPlayClick: (FileItem) -> Unit = {},
-    onPauseClick: () -> Unit = {}
+    onCancelClick: (FileItem) -> Unit = {}
 ) {
+    val playbackState by viewModel.playbackState.collectAsState()
+    val show = viewModel.show
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -159,8 +161,8 @@ fun ShowDetailScreen(
                     playbackState = if (isCurrentlyPlaying) playbackState else null,
                     onDownloadClick = { onDownloadClick(fileItem) },
                     onCancelClick = { onCancelClick(fileItem) },
-                    onPlayClick = { onPlayClick(fileItem) },
-                    onPauseClick = onPauseClick
+                    onPlayClick = { viewModel.playFile(fileItem) },
+                    onPauseClick = { viewModel.togglePlayPause() }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }

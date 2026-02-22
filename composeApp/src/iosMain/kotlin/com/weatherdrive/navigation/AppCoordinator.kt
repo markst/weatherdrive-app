@@ -2,12 +2,11 @@ package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.model.Show
+import com.weatherdrive.player.PlayerService
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import com.weatherdrive.viewmodel.ShowDetailViewModel
@@ -38,6 +37,7 @@ actual class AppCoordinator(
 ) {
     private var isInitialized = false
     private val mediaPlayer = PlatformMediaPlayer()
+    private val playerService = PlayerService(mediaPlayer)
 
     /**
      * No-arg constructor for expect/actual compatibility.
@@ -79,8 +79,7 @@ actual class AppCoordinator(
 
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
-            val viewModel = remember(show.id) { ShowDetailViewModel(show, mediaPlayer) }
-            val playbackState by viewModel.playbackState.collectAsState()
+            val viewModel = remember(show.id) { ShowDetailViewModel(show, playerService) }
             
             DisposableEffect(show.id) {
                 onDispose {
@@ -89,15 +88,8 @@ actual class AppCoordinator(
             }
             
             ShowDetailScreen(
-                show = show,
-                playbackState = playbackState,
-                onBack = { navigateBack() },
-                onPlayClick = { fileItem ->
-                    viewModel.playFile(fileItem)
-                },
-                onPauseClick = {
-                    viewModel.togglePlayPause()
-                }
+                viewModel = viewModel,
+                onBack = { navigateBack() }
             )
         }
         navigationController.pushViewController(detailVC, animated = true)
