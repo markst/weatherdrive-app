@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.download.DownloadManager
@@ -93,16 +94,18 @@ actual class AppCoordinator(
                 }
             }
             
-            val downloadStates = show.filelist.associate { fileItem ->
-                val downloadProgress = downloads[fileItem.googleDriveId]
-                fileItem.googleDriveId to DownloadUiState(
-                    status = downloadProgress?.state.toDownloadStatus(),
-                    progress = downloadProgress?.progress ?: 0f,
-                    bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
-                    downloadedBytes = downloadProgress?.downloadedBytes ?: 0,
-                    totalBytes = downloadProgress?.totalBytes ?: 0,
-                    error = downloadProgress?.error
-                )
+            val downloadStates = remember(downloads, show.filelist) {
+                show.filelist.associate { fileItem ->
+                    val downloadProgress = downloads[fileItem.googleDriveId]
+                    fileItem.googleDriveId to DownloadUiState(
+                        status = downloadProgress?.state.toDownloadStatus(),
+                        progress = downloadProgress?.progress ?: 0f,
+                        bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
+                        downloadedBytes = downloadProgress?.downloadedBytes ?: 0,
+                        totalBytes = downloadProgress?.totalBytes ?: 0,
+                        error = downloadProgress?.error
+                    )
+                }
             }
             
             ShowDetailScreen(

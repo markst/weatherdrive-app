@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -74,16 +75,18 @@ actual class AppCoordinator actual constructor() {
                     }
                 }
 
-                val downloadStates = show.filelist.associate { fileItem ->
-                    val downloadProgress = downloads[fileItem.googleDriveId]
-                    fileItem.googleDriveId to DownloadUiState(
-                        status = downloadProgress?.state.toDownloadStatus(),
-                        progress = downloadProgress?.progress ?: 0f,
-                        bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
-                        downloadedBytes = downloadProgress?.downloadedBytes ?: 0,
-                        totalBytes = downloadProgress?.totalBytes ?: 0,
-                        error = downloadProgress?.error
-                    )
+                val downloadStates = remember(downloads, show.filelist) {
+                    show.filelist.associate { fileItem ->
+                        val downloadProgress = downloads[fileItem.googleDriveId]
+                        fileItem.googleDriveId to DownloadUiState(
+                            status = downloadProgress?.state.toDownloadStatus(),
+                            progress = downloadProgress?.progress ?: 0f,
+                            bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
+                            downloadedBytes = downloadProgress?.downloadedBytes ?: 0,
+                            totalBytes = downloadProgress?.totalBytes ?: 0,
+                            error = downloadProgress?.error
+                        )
+                    }
                 }
 
                 ShowDetailScreen(

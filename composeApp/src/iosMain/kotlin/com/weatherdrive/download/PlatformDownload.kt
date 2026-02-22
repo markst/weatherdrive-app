@@ -2,6 +2,7 @@ package com.weatherdrive.download
 
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
 
 /**
@@ -9,9 +10,8 @@ import platform.Foundation.NSUserDomainMask
  */
 actual fun getDownloadDirectory(): String {
     val fileManager = NSFileManager.defaultManager
-    val paths = fileManager.URLsForDirectory(NSCachesDirectory, NSUserDomainMask)
-    val cacheURL = paths.firstOrNull() ?: error("Could not find Caches directory")
-    @Suppress("CAST_NEVER_SUCCEEDS")
-    val downloadPath = (cacheURL as platform.Foundation.NSURL).path ?: error("Could not get path")
-    return "$downloadPath/Downloads"
+    val urls = fileManager.URLsForDirectory(NSCachesDirectory, NSUserDomainMask)
+    val cacheURL = urls.firstOrNull() as? NSURL ?: error("Could not find Caches directory")
+    val cachePath = cacheURL.path ?: error("Could not get path")
+    return "$cachePath/Downloads"
 }
