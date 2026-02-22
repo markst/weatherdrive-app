@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -22,6 +23,8 @@ import com.weatherdrive.ui.DownloadStatus
 import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
+import com.weatherdrive.viewmodel.PlaybackViewModel
+import dev.markturnip.radioplayer.PlatformMediaPlayer
 import org.koin.mp.KoinPlatform.getKoin
 
 /**
@@ -31,6 +34,7 @@ import org.koin.mp.KoinPlatform.getKoin
 actual class AppCoordinator actual constructor() {
     private var navController: NavHostController? by mutableStateOf(null)
     private val downloadManager: DownloadManager = getKoin().get()
+    private val mediaPlayer: PlatformMediaPlayer = getKoin().get()
 
     /**
      * Composable content that renders the navigation host.
@@ -41,13 +45,17 @@ actual class AppCoordinator actual constructor() {
         val controller = rememberNavController()
         navController = controller
 
+        val playbackViewModel = remember { PlaybackViewModel(mediaPlayer) }
+
         DisposableEffect(Unit) {
             onDispose {
                 downloadManager.close()
+                playbackViewModel.stop()
             }
         }
 
         val downloads by downloadManager.downloads.collectAsState()
+        val playbackState by playbackViewModel.playbackState.collectAsState()
 
         NavHost(
             navController = controller,
@@ -77,12 +85,19 @@ actual class AppCoordinator actual constructor() {
                 ShowDetailScreen(
                     show = show,
                     downloadStates = downloadStates,
+                    playbackState = playbackState,
                     onBack = { navigateBack() },
                     onDownloadClick = { fileItem ->
                         downloadManager.startDownload(fileItem)
                     },
                     onCancelClick = { fileItem ->
                         downloadManager.cancelDownload(fileItem)
+                    },
+                    onPlayClick = { fileItem ->
+                        playbackViewModel.playFile(fileItem, show)
+                    },
+                    onPauseClick = {
+                        playbackViewModel.togglePlayPause()
                     }
                 )
             }

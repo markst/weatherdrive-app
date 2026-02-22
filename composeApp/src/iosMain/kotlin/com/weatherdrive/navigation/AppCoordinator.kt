@@ -1,11 +1,16 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.model.Show
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
+import com.weatherdrive.viewmodel.PlaybackViewModel
+import dev.markturnip.radioplayer.PlatformMediaPlayer
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
@@ -31,6 +36,8 @@ actual class AppCoordinator(
     private val navigationController: UINavigationController
 ) {
     private var isInitialized = false
+    private val mediaPlayer = PlatformMediaPlayer()
+    private val playbackViewModel = PlaybackViewModel(mediaPlayer)
 
     /**
      * No-arg constructor for expect/actual compatibility.
@@ -72,7 +79,19 @@ actual class AppCoordinator(
 
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
-            ShowDetailScreen(show = show, onBack = { navigateBack() })
+            val playbackState by playbackViewModel.playbackState.collectAsState()
+            
+            ShowDetailScreen(
+                show = show,
+                playbackState = playbackState,
+                onBack = { navigateBack() },
+                onPlayClick = { fileItem ->
+                    playbackViewModel.playFile(fileItem, show)
+                },
+                onPauseClick = {
+                    playbackViewModel.togglePlayPause()
+                }
+            )
         }
         navigationController.pushViewController(detailVC, animated = true)
     }

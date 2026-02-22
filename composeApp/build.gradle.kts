@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.ketch.core)
             implementation(libs.ketch.ktor)
             implementation(libs.koin.android)
+            implementation("dev.markturnip.radioplayer:radioplayer")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -55,6 +56,7 @@ kotlin {
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation("dev.markturnip.radioplayer:radioplayer")
         }
     }
 }

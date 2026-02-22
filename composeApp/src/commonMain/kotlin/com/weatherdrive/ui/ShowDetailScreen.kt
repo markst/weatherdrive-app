@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -39,6 +40,8 @@ import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.Show
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
+import com.weatherdrive.viewmodel.PlaybackUiState
+import dev.markturnip.radioplayer.PlaybackState
 
 /**
  * Represents the current state of a download operation.
@@ -69,9 +72,12 @@ data class DownloadUiState(
 fun ShowDetailScreen(
     show: Show,
     downloadStates: Map<String, DownloadUiState> = emptyMap(),
+    playbackState: PlaybackUiState = PlaybackUiState(),
     onBack: () -> Unit = {},
     onDownloadClick: (FileItem) -> Unit = {},
-    onCancelClick: (FileItem) -> Unit = {}
+    onCancelClick: (FileItem) -> Unit = {},
+    onPlayClick: (FileItem) -> Unit = {},
+    onPauseClick: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -133,7 +139,7 @@ fun ShowDetailScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
-                        text = "Available Downloads",
+                        text = "Available Files",
                         style = MaterialTheme.typography.titleLarge
                     )
 
@@ -143,11 +149,16 @@ fun ShowDetailScreen(
 
             items(show.filelist) { fileItem ->
                 val downloadState = downloadStates[fileItem.googleDriveId] ?: DownloadUiState()
+                val isCurrentlyPlaying = playbackState.currentFileId == fileItem.googleDriveId
                 FileItemCard(
                     fileItem = fileItem,
                     downloadState = downloadState,
+                    isCurrentlyPlaying = isCurrentlyPlaying,
+                    playbackState = if (isCurrentlyPlaying) playbackState else null,
                     onDownloadClick = { onDownloadClick(fileItem) },
-                    onCancelClick = { onCancelClick(fileItem) }
+                    onCancelClick = { onCancelClick(fileItem) },
+                    onPlayClick = { onPlayClick(fileItem) },
+                    onPauseClick = onPauseClick
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -159,12 +170,23 @@ fun ShowDetailScreen(
 private fun FileItemCard(
     fileItem: FileItem,
     downloadState: DownloadUiState,
+    isCurrentlyPlaying: Boolean,
+    playbackState: PlaybackUiState?,
     onDownloadClick: () -> Unit,
-    onCancelClick: () -> Unit
+    onCancelClick: () -> Unit,
+    onPlayClick: () -> Unit,
+    onPauseClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = if (isCurrentlyPlaying) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        } else {
+            CardDefaults.cardColors()
+        }
     ) {
         Column(
             modifier = Modifier
@@ -191,6 +213,34 @@ private fun FileItemCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                // Playback controls
+                when {
+                    isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.BUFFERING -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                    isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.PLAYING -> {
+                        IconButton(onClick = onPauseClick) {
+                            Icon(
+                                imageVector = Icons.Default.Pause,
+                                contentDescription = "Pause",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    else -> {
+                        IconButton(onClick = onPlayClick) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Play"
+                            )
+                        }
+                    }
+                }
+
+                // Download controls
                 when (downloadState.status) {
                     DownloadStatus.DOWNLOADING, DownloadStatus.PENDING -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -209,31 +259,52 @@ private fun FileItemCard(
                     }
                     DownloadStatus.COMPLETED -> {
                         Text(
-                            text = "✓ Downloaded",
+                            text = "✓",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
                     DownloadStatus.FAILED -> {
-                        IconButton(onClick = onDownloadClick) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Retry Download",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
+                        Text(
+                            text = "✗",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
-                    else -> {
-                        IconButton(onClick = onDownloadClick) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Download"
-                            )
-                        }
+                    else -> { /* No download indicator for IDLE/PAUSED */ }
+                }
+            }
+
+            // Playback progress
+            if (isCurrentlyPlaying && playbackState?.progress != null) {
+                val progress = playbackState.progress
+                if (progress.duration > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LinearProgressIndicator(
+                        progress = { (progress.elapsed / progress.duration).toFloat() },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = formatTime(progress.elapsed),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = formatTime(progress.duration),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
 
+            // Download progress
             if (downloadState.status == DownloadStatus.DOWNLOADING || 
                 downloadState.status == DownloadStatus.PAUSED) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -269,4 +340,14 @@ private fun FileItemCard(
             }
         }
     }
+}
+
+/**
+ * Format seconds to MM:SS display format.
+ */
+private fun formatTime(seconds: Double): String {
+    val totalSeconds = seconds.toInt()
+    val minutes = totalSeconds / 60
+    val secs = totalSeconds % 60
+    return "%d:%02d".format(minutes, secs)
 }
