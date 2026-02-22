@@ -1,7 +1,6 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -14,11 +13,8 @@ import com.weatherdrive.ui.DownloadStatus
 import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
-import com.weatherdrive.viewmodel.ShowDetailViewModel
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
@@ -85,14 +81,7 @@ actual class AppCoordinator(
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
             val downloadManager: DownloadManager = koinInject()
-            val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
             val downloads by downloadManager.downloads.collectAsState()
-            
-            DisposableEffect(show.id) {
-                onDispose {
-                    viewModel.stop()
-                }
-            }
             
             val downloadStates = remember(downloads, show.filelist) {
                 show.filelist.associate { fileItem ->
@@ -109,7 +98,7 @@ actual class AppCoordinator(
             }
             
             ShowDetailScreen(
-                viewModel = viewModel,
+                show = show,
                 downloadStates = downloadStates,
                 onBack = { navigateBack() },
                 onDownloadClick = { fileItem ->

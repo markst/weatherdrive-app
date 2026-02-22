@@ -30,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -39,6 +40,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.Show
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
@@ -46,6 +48,8 @@ import com.weatherdrive.util.formatTime
 import com.weatherdrive.viewmodel.ShowDetailViewModel
 import dev.markturnip.radioplayer.PlaybackState
 import dev.markturnip.radioplayer.Progress
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /**
  * Represents the current state of a download operation.
@@ -74,14 +78,21 @@ data class DownloadUiState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetailScreen(
-    viewModel: ShowDetailViewModel,
+    show: Show,
     downloadStates: Map<String, DownloadUiState> = emptyMap(),
     onBack: () -> Unit = {},
     onDownloadClick: (FileItem) -> Unit = {},
     onCancelClick: (FileItem) -> Unit = {}
 ) {
+    val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
+    
+    DisposableEffect(show.id) {
+        onDispose {
+            viewModel.stop()
+        }
+    }
+    
     val playbackState by viewModel.playbackState.collectAsState()
-    val show = viewModel.show
     
     Scaffold(
         topBar = {

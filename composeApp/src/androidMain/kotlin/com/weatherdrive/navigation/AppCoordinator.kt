@@ -23,10 +23,7 @@ import com.weatherdrive.ui.DownloadStatus
 import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
-import com.weatherdrive.viewmodel.ShowDetailViewModel
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 
 /**
  * Android implementation of AppCoordinator.
@@ -66,14 +63,6 @@ actual class AppCoordinator actual constructor() {
             composable<ShowDetailRoute> { backStackEntry ->
                 val route: ShowDetailRoute = backStackEntry.toRoute()
                 val show = route.toShow()
-                
-                val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
-                
-                DisposableEffect(show.id) {
-                    onDispose {
-                        viewModel.stop()
-                    }
-                }
 
                 val downloadStates = remember(downloads, show.filelist) {
                     show.filelist.associate { fileItem ->
@@ -90,7 +79,7 @@ actual class AppCoordinator actual constructor() {
                 }
 
                 ShowDetailScreen(
-                    viewModel = viewModel,
+                    show = show,
                     downloadStates = downloadStates,
                     onBack = { navigateBack() },
                     onDownloadClick = { fileItem ->
