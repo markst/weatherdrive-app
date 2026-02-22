@@ -16,4 +16,3 @@ val androidModule = module {
         DownloadManager(downloadDir, get<WeatherdriveApi>())
     }
 }
-
