@@ -217,32 +217,12 @@ private fun FileItemCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Playback controls
-                when {
-                    isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.BUFFERING -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                    isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.PLAYING -> {
-                        IconButton(onClick = onPauseClick) {
-                            Icon(
-                                imageVector = Icons.Default.Pause,
-                                contentDescription = "Pause",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    else -> {
-                        IconButton(onClick = onPlayClick) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Play"
-                            )
-                        }
-                    }
-                }
+                PlaybackControlButton(
+                    isCurrentlyPlaying = isCurrentlyPlaying,
+                    playbackState = playbackState,
+                    onPlayClick = onPlayClick,
+                    onPauseClick = onPauseClick
+                )
 
                 // Download controls
                 when (downloadState.status) {
@@ -316,6 +296,43 @@ private fun FileItemCard(
                     text = "Error: ${downloadState.error}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Composable displaying playback control button (play/pause/buffering).
+ */
+@Composable
+private fun PlaybackControlButton(
+    isCurrentlyPlaying: Boolean,
+    playbackState: PlaybackUiState?,
+    onPlayClick: () -> Unit,
+    onPauseClick: () -> Unit
+) {
+    when {
+        isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.BUFFERING -> {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
+        }
+        isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.PLAYING -> {
+            IconButton(onClick = onPauseClick) {
+                Icon(
+                    imageVector = Icons.Default.Pause,
+                    contentDescription = "Pause",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        else -> {
+            IconButton(onClick = onPlayClick) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play"
                 )
             }
         }

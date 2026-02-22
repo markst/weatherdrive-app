@@ -25,7 +25,7 @@ import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import com.weatherdrive.viewmodel.ShowDetailViewModel
-import org.koin.mp.KoinPlatform.getKoin
+import org.koin.compose.koinInject
 
 /**
  * Android implementation of AppCoordinator.
@@ -33,8 +33,6 @@ import org.koin.mp.KoinPlatform.getKoin
  */
 actual class AppCoordinator actual constructor() {
     private var navController: NavHostController? by mutableStateOf(null)
-    private val downloadManager: DownloadManager = getKoin().get()
-    private val playerService: PlayerService = getKoin().get()
 
     /**
      * Composable content that renders the navigation host.
@@ -44,6 +42,9 @@ actual class AppCoordinator actual constructor() {
     actual fun Content() {
         val controller = rememberNavController()
         navController = controller
+        
+        val downloadManager: DownloadManager = koinInject()
+        val playerService: PlayerService = koinInject()
 
         DisposableEffect(Unit) {
             onDispose {
@@ -66,7 +67,13 @@ actual class AppCoordinator actual constructor() {
                 val route: ShowDetailRoute = backStackEntry.toRoute()
                 val show = route.toShow()
                 
-                val viewModel = remember(show.id) { ShowDetailViewModel(show, playerService) }
+                val viewModel = remember(show.id) { 
+                    ShowDetailViewModel(
+                        show = show,
+                        playerService = playerService,
+                        getLocalFilePath = { fileItem -> downloadManager.getLocalFilePath(fileItem) }
+                    )
+                }
 
                 DisposableEffect(show.id) {
                     onDispose {

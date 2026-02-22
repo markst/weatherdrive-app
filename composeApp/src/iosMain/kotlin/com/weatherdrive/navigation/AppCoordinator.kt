@@ -10,8 +10,8 @@ import com.weatherdrive.player.PlayerService
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import com.weatherdrive.viewmodel.ShowDetailViewModel
-import dev.markturnip.radioplayer.PlatformMediaPlayer
 import kotlinx.cinterop.ExperimentalForeignApi
+import org.koin.mp.KoinPlatform.getKoin
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
@@ -36,8 +36,7 @@ actual class AppCoordinator(
     private val navigationController: UINavigationController
 ) {
     private var isInitialized = false
-    private val mediaPlayer = PlatformMediaPlayer()
-    private val playerService = PlayerService(mediaPlayer)
+    private val playerService: PlayerService = getKoin().get()
 
     /**
      * No-arg constructor for expect/actual compatibility.
@@ -79,7 +78,13 @@ actual class AppCoordinator(
 
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
-            val viewModel = remember(show.id) { ShowDetailViewModel(show, playerService) }
+            val viewModel = remember(show.id) { 
+                ShowDetailViewModel(
+                    show = show,
+                    playerService = playerService,
+                    getLocalFilePath = { null } // iOS doesn't have download manager yet
+                )
+            }
             
             DisposableEffect(show.id) {
                 onDispose {

@@ -225,4 +225,18 @@ class DownloadManager(
     fun close() {
         ketch.close()
     }
+
+    /**
+     * Gets the local file path for a downloaded file.
+     * Returns null if the file is not downloaded or download is not completed.
+     */
+    fun getLocalFilePath(fileItem: FileItem): String? {
+        val downloadProgress = _downloads.value[fileItem.googleDriveId]
+        return if (downloadProgress?.state == DownloadProgressState.Completed) {
+            val filename = generateFilename(fileItem)
+            "$downloadDirectory/$filename"
+        } else {
+            null
+        }
+    }
 }
