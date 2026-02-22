@@ -67,6 +67,12 @@ actual class AppCoordinator actual constructor() {
                 val show = route.toShow()
                 
                 val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
+                
+                DisposableEffect(show.id) {
+                    onDispose {
+                        viewModel.stop()
+                    }
+                }
 
                 val downloadStates = show.filelist.associate { fileItem ->
                     val downloadProgress = downloads[fileItem.googleDriveId]
