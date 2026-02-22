@@ -2,16 +2,15 @@ package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.model.Show
-import com.weatherdrive.player.PlayerService
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import com.weatherdrive.viewmodel.ShowDetailViewModel
 import kotlinx.cinterop.ExperimentalForeignApi
-import org.koin.mp.KoinPlatform.getKoin
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
@@ -36,7 +35,6 @@ actual class AppCoordinator(
     private val navigationController: UINavigationController
 ) {
     private var isInitialized = false
-    private val playerService: PlayerService = getKoin().get()
 
     /**
      * No-arg constructor for expect/actual compatibility.
@@ -78,13 +76,7 @@ actual class AppCoordinator(
 
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
-            val viewModel = remember(show.id) { 
-                ShowDetailViewModel(
-                    show = show,
-                    playerService = playerService,
-                    getLocalFilePath = { null } // iOS doesn't have download manager yet
-                )
-            }
+            val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
             
             DisposableEffect(show.id) {
                 onDispose {
