@@ -1,6 +1,8 @@
 package com.weatherdrive.di
 
+import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.model.Show
+import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.player.PlayerService
 import com.weatherdrive.viewmodel.ShowDetailViewModel
 import dev.markturnip.radioplayer.PlatformMediaPlayer
@@ -11,15 +13,16 @@ import org.koin.dsl.module
  * iOS-specific Koin module providing platform dependencies.
  */
 val iosModule = module {
+    single { DownloadManager(get<WeatherdriveApi>()) }
     single { PlatformMediaPlayer() }
     single { PlayerService(get()) }
     
     viewModel { (show: Show) ->
+        val downloadManager: DownloadManager = get()
         ShowDetailViewModel(
             show = show,
             playerService = get(),
-            // TODO: Implement iOS download manager and pass getLocalFilePath here
-            getLocalFilePath = { null }
+            getLocalFilePath = { fileItem -> downloadManager.getLocalFilePath(fileItem) }
         )
     }
 }

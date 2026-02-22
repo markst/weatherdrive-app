@@ -43,9 +43,9 @@ sealed class DownloadProgressState {
  * Tracks download progress for multiple files identified by googleDriveId.
  */
 class DownloadManager(
-    private val downloadDirectory: String,
     private val api: WeatherdriveApi = WeatherdriveApi()
 ) {
+    private val downloadDirectory: String = getDownloadDirectory()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val ketch = Ketch(
