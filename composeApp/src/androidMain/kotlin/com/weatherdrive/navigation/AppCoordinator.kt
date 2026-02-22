@@ -23,7 +23,7 @@ import com.weatherdrive.ui.DownloadStatus
 import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
-import com.weatherdrive.viewmodel.PlaybackViewModel
+import com.weatherdrive.viewmodel.ShowDetailViewModel
 import dev.markturnip.radioplayer.PlatformMediaPlayer
 import org.koin.mp.KoinPlatform.getKoin
 
@@ -45,17 +45,13 @@ actual class AppCoordinator actual constructor() {
         val controller = rememberNavController()
         navController = controller
 
-        val playbackViewModel = remember { PlaybackViewModel(mediaPlayer) }
-
         DisposableEffect(Unit) {
             onDispose {
                 downloadManager.close()
-                playbackViewModel.stop()
             }
         }
 
         val downloads by downloadManager.downloads.collectAsState()
-        val playbackState by playbackViewModel.playbackState.collectAsState()
 
         NavHost(
             navController = controller,
@@ -69,6 +65,15 @@ actual class AppCoordinator actual constructor() {
             composable<ShowDetailRoute> { backStackEntry ->
                 val route: ShowDetailRoute = backStackEntry.toRoute()
                 val show = route.toShow()
+                
+                val viewModel = remember(show.id) { ShowDetailViewModel(show, mediaPlayer) }
+                val playbackState by viewModel.playbackState.collectAsState()
+
+                DisposableEffect(show.id) {
+                    onDispose {
+                        viewModel.stop()
+                    }
+                }
 
                 val downloadStates = show.filelist.associate { fileItem ->
                     val downloadProgress = downloads[fileItem.googleDriveId]
@@ -94,10 +99,10 @@ actual class AppCoordinator actual constructor() {
                         downloadManager.cancelDownload(fileItem)
                     },
                     onPlayClick = { fileItem ->
-                        playbackViewModel.playFile(fileItem, show)
+                        viewModel.playFile(fileItem)
                     },
                     onPauseClick = {
-                        playbackViewModel.togglePlayPause()
+                        viewModel.togglePlayPause()
                     }
                 )
             }

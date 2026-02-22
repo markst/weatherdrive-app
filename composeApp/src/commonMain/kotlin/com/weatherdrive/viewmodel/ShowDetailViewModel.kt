@@ -37,9 +37,10 @@ private class FileItemMediaPlayer(
 }
 
 /**
- * ViewModel managing audio playback using radioplayer.
+ * ViewModel for the ShowDetailScreen managing playback state.
  */
-class PlaybackViewModel(
+class ShowDetailViewModel(
+    val show: Show,
     private val mediaPlayer: PlatformMediaPlayer
 ) {
     private val _playbackState = MutableStateFlow(PlaybackUiState())
@@ -59,9 +60,9 @@ class PlaybackViewModel(
     }
     
     /**
-     * Play a file item from a show.
+     * Play a file item.
      */
-    fun playFile(fileItem: FileItem, show: Show) {
+    fun playFile(fileItem: FileItem) {
         val mediaItem = FileItemMediaPlayer(fileItem, show)
         _playbackState.value = _playbackState.value.copy(
             currentFileId = fileItem.googleDriveId,

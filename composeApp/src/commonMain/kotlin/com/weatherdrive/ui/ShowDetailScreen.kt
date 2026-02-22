@@ -40,8 +40,10 @@ import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.Show
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
+import com.weatherdrive.util.formatTime
 import com.weatherdrive.viewmodel.PlaybackUiState
 import dev.markturnip.radioplayer.PlaybackState
+import dev.markturnip.radioplayer.Progress
 
 /**
  * Represents the current state of a download operation.
@@ -277,31 +279,7 @@ private fun FileItemCard(
 
             // Playback progress
             if (isCurrentlyPlaying && playbackState?.progress != null) {
-                val progress = playbackState.progress
-                if (progress.duration > 0) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LinearProgressIndicator(
-                        progress = { (progress.elapsed / progress.duration).toFloat() },
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = formatTime(progress.elapsed),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = formatTime(progress.duration),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                PlaybackProgressIndicator(progress = playbackState.progress)
             }
 
             // Download progress
@@ -343,11 +321,32 @@ private fun FileItemCard(
 }
 
 /**
- * Format seconds to MM:SS display format.
+ * Composable displaying playback progress with elapsed and duration times.
  */
-private fun formatTime(seconds: Double): String {
-    val totalSeconds = seconds.toInt()
-    val minutes = totalSeconds / 60
-    val secs = totalSeconds % 60
-    return "%d:%02d".format(minutes, secs)
+@Composable
+private fun PlaybackProgressIndicator(progress: Progress) {
+    if (progress.duration > 0) {
+        Spacer(modifier = Modifier.height(12.dp))
+        LinearProgressIndicator(
+            progress = { (progress.elapsed / progress.duration).toFloat() },
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = progress.elapsed.formatTime(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = progress.duration.formatTime(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
