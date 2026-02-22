@@ -5,7 +5,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -19,13 +18,14 @@ import com.weatherdrive.navigation.routes.HomeRoute
 import com.weatherdrive.navigation.routes.ShowDetailRoute
 import com.weatherdrive.navigation.routes.toRoute
 import com.weatherdrive.navigation.routes.toShow
-import com.weatherdrive.player.PlayerService
 import com.weatherdrive.ui.DownloadStatus
 import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import com.weatherdrive.viewmodel.ShowDetailViewModel
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /**
  * Android implementation of AppCoordinator.
@@ -44,7 +44,6 @@ actual class AppCoordinator actual constructor() {
         navController = controller
         
         val downloadManager: DownloadManager = koinInject()
-        val playerService: PlayerService = koinInject()
 
         DisposableEffect(Unit) {
             onDispose {
@@ -67,19 +66,7 @@ actual class AppCoordinator actual constructor() {
                 val route: ShowDetailRoute = backStackEntry.toRoute()
                 val show = route.toShow()
                 
-                val viewModel = remember(show.id) { 
-                    ShowDetailViewModel(
-                        show = show,
-                        playerService = playerService,
-                        getLocalFilePath = { fileItem -> downloadManager.getLocalFilePath(fileItem) }
-                    )
-                }
-
-                DisposableEffect(show.id) {
-                    onDispose {
-                        viewModel.stop()
-                    }
-                }
+                val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
 
                 val downloadStates = show.filelist.associate { fileItem ->
                     val downloadProgress = downloads[fileItem.googleDriveId]

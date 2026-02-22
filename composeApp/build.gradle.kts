@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.ketch.core)
             implementation(libs.ketch.ktor)
             implementation(libs.koin.android)
+            implementation(libs.koin.compose.viewmodel)
             implementation("dev.markturnip.radioplayer:radioplayer")
         }
         commonMain.dependencies {
