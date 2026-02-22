@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.Show
 import com.weatherdrive.player.PlaybackUiState
@@ -52,7 +53,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 /**
- * Represents the current state of a download operation.
+ * Represents the current state of a download operation for UI display.
  */
 enum class DownloadStatus {
     IDLE,
@@ -75,14 +76,26 @@ data class DownloadUiState(
     val error: String? = null
 )
 
+/**
+ * Maps internal DownloadProgressState to UI DownloadStatus enum.
+ */
+private fun DownloadProgressState?.toDownloadStatus(): DownloadStatus {
+    return when (this) {
+        is DownloadProgressState.Idle -> DownloadStatus.IDLE
+        is DownloadProgressState.Pending -> DownloadStatus.PENDING
+        is DownloadProgressState.Downloading -> DownloadStatus.DOWNLOADING
+        is DownloadProgressState.Paused -> DownloadStatus.PAUSED
+        is DownloadProgressState.Completed -> DownloadStatus.COMPLETED
+        is DownloadProgressState.Failed -> DownloadStatus.FAILED
+        null -> DownloadStatus.IDLE
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetailScreen(
     show: Show,
-    downloadStates: Map<String, DownloadUiState> = emptyMap(),
-    onBack: () -> Unit = {},
-    onDownloadClick: (FileItem) -> Unit = {},
-    onCancelClick: (FileItem) -> Unit = {}
+    onBack: () -> Unit = {}
 ) {
     val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
     
@@ -93,6 +106,20 @@ fun ShowDetailScreen(
     }
     
     val playbackState by viewModel.playbackState.collectAsState()
+    val downloads by viewModel.downloadManager.downloads.collectAsState()
+    
+    // Map download progress to UI state
+    val downloadStates = show.filelist.associate { fileItem ->
+        val downloadProgress = downloads[fileItem.googleDriveId]
+        fileItem.googleDriveId to DownloadUiState(
+            status = downloadProgress?.state.toDownloadStatus(),
+            progress = downloadProgress?.progress ?: 0f,
+            bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
+            downloadedBytes = downloadProgress?.downloadedBytes ?: 0,
+            totalBytes = downloadProgress?.totalBytes ?: 0,
+            error = downloadProgress?.error
+        )
+    }
     
     Scaffold(
         topBar = {
@@ -170,8 +197,8 @@ fun ShowDetailScreen(
                     downloadState = downloadState,
                     isCurrentlyPlaying = isCurrentlyPlaying,
                     playbackState = if (isCurrentlyPlaying) playbackState else null,
-                    onDownloadClick = { onDownloadClick(fileItem) },
-                    onCancelClick = { onCancelClick(fileItem) },
+                    onDownloadClick = { viewModel.startDownload(fileItem) },
+                    onCancelClick = { viewModel.cancelDownload(fileItem) },
                     onPlayClick = { viewModel.playFile(fileItem) },
                     onPauseClick = { viewModel.togglePlayPause() }
                 )

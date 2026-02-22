@@ -1,5 +1,6 @@
 package com.weatherdrive.viewmodel
 
+import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.Show
 import com.weatherdrive.player.PlayerService
@@ -20,12 +21,12 @@ private class FileItemMediaPlayer(
 ) : MediaPlayerItem
 
 /**
- * ViewModel for the ShowDetailScreen managing playback state.
+ * ViewModel for the ShowDetailScreen managing playback and download state.
  */
 class ShowDetailViewModel(
     val show: Show,
     private val playerService: PlayerService,
-    private val getLocalFilePath: (FileItem) -> String?
+    val downloadManager: DownloadManager
 ) {
     val playbackState: StateFlow<PlaybackUiState> = playerService.playbackState
     
@@ -34,7 +35,7 @@ class ShowDetailViewModel(
      * Only plays if the file has been downloaded.
      */
     fun playFile(fileItem: FileItem) {
-        val localPath = getLocalFilePath(fileItem) ?: return
+        val localPath = downloadManager.getLocalFilePath(fileItem) ?: return
         val mediaItem = FileItemMediaPlayer(
             id = fileItem.googleDriveId,
             title = fileItem.title,
@@ -58,5 +59,19 @@ class ShowDetailViewModel(
      */
     fun stop() {
         playerService.stop()
+    }
+    
+    /**
+     * Start downloading a file.
+     */
+    fun startDownload(fileItem: FileItem) {
+        downloadManager.startDownload(fileItem)
+    }
+    
+    /**
+     * Cancel downloading a file.
+     */
+    fun cancelDownload(fileItem: FileItem) {
+        downloadManager.cancelDownload(fileItem)
     }
 }

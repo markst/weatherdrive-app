@@ -1,29 +1,21 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.weatherdrive.download.DownloadManager
-import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.Show
 import com.weatherdrive.navigation.routes.HomeRoute
 import com.weatherdrive.navigation.routes.ShowDetailRoute
 import com.weatherdrive.navigation.routes.toRoute
 import com.weatherdrive.navigation.routes.toShow
-import com.weatherdrive.ui.DownloadStatus
-import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
-import org.koin.compose.koinInject
 
 /**
  * Android implementation of AppCoordinator.
@@ -40,16 +32,6 @@ actual class AppCoordinator actual constructor() {
     actual fun Content() {
         val controller = rememberNavController()
         navController = controller
-        
-        val downloadManager: DownloadManager = koinInject()
-
-        DisposableEffect(Unit) {
-            onDispose {
-                downloadManager.close()
-            }
-        }
-
-        val downloads by downloadManager.downloads.collectAsState()
 
         NavHost(
             navController = controller,
@@ -64,30 +46,9 @@ actual class AppCoordinator actual constructor() {
                 val route: ShowDetailRoute = backStackEntry.toRoute()
                 val show = route.toShow()
 
-                val downloadStates = remember(downloads, show.filelist) {
-                    show.filelist.associate { fileItem ->
-                        val downloadProgress = downloads[fileItem.googleDriveId]
-                        fileItem.googleDriveId to DownloadUiState(
-                            status = downloadProgress?.state.toDownloadStatus(),
-                            progress = downloadProgress?.progress ?: 0f,
-                            bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
-                            downloadedBytes = downloadProgress?.downloadedBytes ?: 0,
-                            totalBytes = downloadProgress?.totalBytes ?: 0,
-                            error = downloadProgress?.error
-                        )
-                    }
-                }
-
                 ShowDetailScreen(
                     show = show,
-                    downloadStates = downloadStates,
-                    onBack = { navigateBack() },
-                    onDownloadClick = { fileItem ->
-                        downloadManager.startDownload(fileItem)
-                    },
-                    onCancelClick = { fileItem ->
-                        downloadManager.cancelDownload(fileItem)
-                    }
+                    onBack = { navigateBack() }
                 )
             }
         }
@@ -99,20 +60,5 @@ actual class AppCoordinator actual constructor() {
 
     actual fun navigateBack() {
         navController?.popBackStack()
-    }
-}
-
-/**
- * Maps internal DownloadProgressState to UI DownloadStatus enum.
- */
-private fun DownloadProgressState?.toDownloadStatus(): DownloadStatus {
-    return when (this) {
-        is DownloadProgressState.Idle -> DownloadStatus.IDLE
-        is DownloadProgressState.Pending -> DownloadStatus.PENDING
-        is DownloadProgressState.Downloading -> DownloadStatus.DOWNLOADING
-        is DownloadProgressState.Paused -> DownloadStatus.PAUSED
-        is DownloadProgressState.Completed -> DownloadStatus.COMPLETED
-        is DownloadProgressState.Failed -> DownloadStatus.FAILED
-        null -> DownloadStatus.IDLE
     }
 }

@@ -1,20 +1,12 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
-import com.weatherdrive.download.DownloadManager
-import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.Show
-import com.weatherdrive.ui.DownloadStatus
-import com.weatherdrive.ui.DownloadUiState
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import kotlinx.cinterop.ExperimentalForeignApi
-import org.koin.compose.koinInject
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
@@ -80,33 +72,9 @@ actual class AppCoordinator(
 
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
-            val downloadManager: DownloadManager = koinInject()
-            val downloads by downloadManager.downloads.collectAsState()
-            
-            val downloadStates = remember(downloads, show.filelist) {
-                show.filelist.associate { fileItem ->
-                    val downloadProgress = downloads[fileItem.googleDriveId]
-                    fileItem.googleDriveId to DownloadUiState(
-                        status = downloadProgress?.state.toDownloadStatus(),
-                        progress = downloadProgress?.progress ?: 0f,
-                        bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
-                        downloadedBytes = downloadProgress?.downloadedBytes ?: 0,
-                        totalBytes = downloadProgress?.totalBytes ?: 0,
-                        error = downloadProgress?.error
-                    )
-                }
-            }
-            
             ShowDetailScreen(
                 show = show,
-                downloadStates = downloadStates,
-                onBack = { navigateBack() },
-                onDownloadClick = { fileItem ->
-                    downloadManager.startDownload(fileItem)
-                },
-                onCancelClick = { fileItem ->
-                    downloadManager.cancelDownload(fileItem)
-                }
+                onBack = { navigateBack() }
             )
         }
         navigationController.pushViewController(detailVC, animated = true)
@@ -114,20 +82,5 @@ actual class AppCoordinator(
 
     actual fun navigateBack() {
         navigationController.popViewControllerAnimated(animated = true)
-    }
-}
-
-/**
- * Maps internal DownloadProgressState to UI DownloadStatus enum.
- */
-private fun DownloadProgressState?.toDownloadStatus(): DownloadStatus {
-    return when (this) {
-        is DownloadProgressState.Idle -> DownloadStatus.IDLE
-        is DownloadProgressState.Pending -> DownloadStatus.PENDING
-        is DownloadProgressState.Downloading -> DownloadStatus.DOWNLOADING
-        is DownloadProgressState.Paused -> DownloadStatus.PAUSED
-        is DownloadProgressState.Completed -> DownloadStatus.COMPLETED
-        is DownloadProgressState.Failed -> DownloadStatus.FAILED
-        null -> DownloadStatus.IDLE
     }
 }

@@ -18,11 +18,10 @@ val iosModule = module {
     single { PlayerService(get()) }
     
     viewModel { (show: Show) ->
-        val downloadManager: DownloadManager = get()
         ShowDetailViewModel(
             show = show,
             playerService = get(),
-            getLocalFilePath = { fileItem -> downloadManager.getLocalFilePath(fileItem) }
+            downloadManager = get()
         )
     }
 }
