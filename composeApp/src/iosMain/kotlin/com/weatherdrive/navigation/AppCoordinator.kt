@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.model.Show
+import com.weatherdrive.ui.DownloadsListScreen
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -45,7 +46,10 @@ actual class AppCoordinator(
      */
     fun start(): UIViewController {
         return ComposeUIViewController {
-            HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
+            HomeScreen(
+                onShowClick = { show -> navigateToShowDetail(show) },
+                onDownloadsClick = { navigateToDownloads() }
+            )
         }
     }
 
@@ -59,7 +63,10 @@ actual class AppCoordinator(
     actual fun Content() {
         if (!isInitialized) {
             val homeVC = ComposeUIViewController {
-                HomeScreen(onShowClick = { show -> navigateToShowDetail(show) })
+                HomeScreen(
+                    onShowClick = { show -> navigateToShowDetail(show) },
+                    onDownloadsClick = { navigateToDownloads() }
+                )
             }
             navigationController.setViewControllers(listOf(homeVC), animated = false)
             isInitialized = true
@@ -78,6 +85,15 @@ actual class AppCoordinator(
             )
         }
         navigationController.pushViewController(detailVC, animated = true)
+    }
+
+    actual fun navigateToDownloads() {
+        val downloadsVC = ComposeUIViewController {
+            DownloadsListScreen(
+                onBack = { navigateBack() }
+            )
+        }
+        navigationController.pushViewController(downloadsVC, animated = true)
     }
 
     actual fun navigateBack() {

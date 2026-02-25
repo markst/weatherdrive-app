@@ -4,6 +4,7 @@ import com.weatherdrive.database.DatabaseDriverFactory
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.player.PlayerService
+import com.weatherdrive.viewmodel.DownloadsListViewModel
 import com.weatherdrive.viewmodel.PlayerViewModel
 import com.weatherdrive.viewmodel.ShowDetailViewModel
 import dev.markturnip.radioplayer.PlatformMediaPlayer
@@ -29,4 +30,6 @@ val androidModule = module {
             downloadManager = get()
         )
     }
+    
+    viewModel { DownloadsListViewModel(get()) }
 }

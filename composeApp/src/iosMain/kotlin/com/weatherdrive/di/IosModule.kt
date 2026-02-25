@@ -5,6 +5,7 @@ import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.model.Show
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.player.PlayerService
+import com.weatherdrive.viewmodel.DownloadsListViewModel
 import com.weatherdrive.viewmodel.PlayerViewModel
 import com.weatherdrive.viewmodel.ShowDetailViewModel
 import dev.markturnip.radioplayer.PlatformMediaPlayer
@@ -28,4 +29,6 @@ val iosModule = module {
             downloadManager = get()
         )
     }
+    
+    viewModel { DownloadsListViewModel(get()) }
 }
