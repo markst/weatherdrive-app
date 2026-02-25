@@ -10,6 +10,9 @@ import kotlinx.serialization.Serializable
 object HomeRoute
 
 @Serializable
+object DownloadsRoute
+
+@Serializable
 data class ShowDetailRoute(
     val id: Long
 )

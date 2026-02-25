@@ -10,9 +10,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.weatherdrive.model.Show
+import com.weatherdrive.navigation.routes.DownloadsRoute
 import com.weatherdrive.navigation.routes.HomeRoute
 import com.weatherdrive.navigation.routes.ShowDetailRoute
 import com.weatherdrive.navigation.routes.toRoute
+import com.weatherdrive.ui.DownloadsListScreen
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 
@@ -38,7 +40,13 @@ actual class AppCoordinator actual constructor() {
         ) {
             composable<HomeRoute> {
                 HomeScreen(
-                    onShowClick = { show -> navigateToShowDetail(show) }
+                    onShowClick = { show -> navigateToShowDetail(show) },
+                    onDownloadsClick = { navigateToDownloads() }
+                )
+            }
+            composable<DownloadsRoute> {
+                DownloadsListScreen(
+                    onBack = { navigateBack() }
                 )
             }
             composable<ShowDetailRoute> { backStackEntry ->
@@ -54,6 +62,10 @@ actual class AppCoordinator actual constructor() {
 
     actual fun navigateToShowDetail(show: Show) {
         navController?.navigate(show.toRoute())
+    }
+
+    actual fun navigateToDownloads() {
+        navController?.navigate(DownloadsRoute)
     }
 
     actual fun navigateBack() {

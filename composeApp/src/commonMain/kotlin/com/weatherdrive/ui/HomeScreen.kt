@@ -12,11 +12,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,34 +42,56 @@ import com.weatherdrive.viewmodel.HomeViewModel
 import com.weatherdrive.viewmodel.UiState
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel<HomeViewModel>(),
-    onShowClick: (Show) -> Unit = {}
+    onShowClick: (Show) -> Unit = {},
+    onDownloadsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        when (val state = uiState) {
-            is UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            is UiState.Error -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "Error: ${state.message}",
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-            is UiState.Success -> if (state.treeNodes.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("WeatherDrive") },
+                actions = {
+                    IconButton(onClick = onDownloadsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Downloads"
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when (val state = uiState) {
+                is UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                is UiState.Error -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "No shows found.",
-                        modifier = Modifier.padding(16.dp)
+                        text = "Error: ${state.message}",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
-            } else {
-                ExpandableTree(state.treeNodes, onShowClick)
+                is UiState.Success -> if (state.treeNodes.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "No shows found.",
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                } else {
+                    ExpandableTree(state.treeNodes, onShowClick)
+                }
             }
         }
     }

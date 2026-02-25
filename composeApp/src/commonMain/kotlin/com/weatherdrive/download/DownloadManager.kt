@@ -11,6 +11,7 @@ import com.linroid.ketch.engine.KtorHttpEngine
 import com.weatherdrive.database.DownloadDatabase
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.network.WeatherdriveApi
+import com.weatherdrive.persistence.deleteFile
 import com.weatherdrive.persistence.fileExists
 import com.weatherdrive.util.sanitizeForFilename
 import kotlinx.coroutines.CoroutineScope
@@ -227,6 +228,23 @@ class DownloadManager(
         scope.launch {
             activeTasks[fileItem.googleDriveId]?.cancel()
             activeTasks.remove(fileItem.googleDriveId)
+            _downloads.update { it - fileItem.googleDriveId }
+            deleteMetadata(fileItem)
+        }
+    }
+
+    /**
+     * Deletes a completed download by removing both the file from disk and
+     * the metadata entry from the database.
+     */
+    fun deleteDownload(fileItem: FileItem) {
+        scope.launch {
+            try {
+                val filename = generateFilename(fileItem)
+                deleteFile("$downloadDirectory/$filename")
+            } catch (e: Exception) {
+                // Silently ignore file deletion errors
+            }
             _downloads.update { it - fileItem.googleDriveId }
             deleteMetadata(fileItem)
         }

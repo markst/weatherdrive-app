@@ -11,6 +11,7 @@ import com.weatherdrive.model.Show
  */
 expect class AppCoordinator() {
     fun navigateToShowDetail(show: Show)
+    fun navigateToDownloads()
     fun navigateBack()
 
     /**
