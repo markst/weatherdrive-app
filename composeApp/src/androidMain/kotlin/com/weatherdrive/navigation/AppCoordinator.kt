@@ -13,7 +13,6 @@ import com.weatherdrive.model.Show
 import com.weatherdrive.navigation.routes.HomeRoute
 import com.weatherdrive.navigation.routes.ShowDetailRoute
 import com.weatherdrive.navigation.routes.toRoute
-import com.weatherdrive.navigation.routes.toShow
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 
@@ -44,10 +43,9 @@ actual class AppCoordinator actual constructor() {
             }
             composable<ShowDetailRoute> { backStackEntry ->
                 val route: ShowDetailRoute = backStackEntry.toRoute()
-                val show = route.toShow()
 
                 ShowDetailScreen(
-                    show = show,
+                    showId = route.id,
                     onBack = { navigateBack() }
                 )
             }

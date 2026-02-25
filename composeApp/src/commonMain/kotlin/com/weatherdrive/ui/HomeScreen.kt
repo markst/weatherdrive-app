@@ -33,10 +33,11 @@ import com.weatherdrive.model.Show
 import com.weatherdrive.model.YearNode
 import com.weatherdrive.viewmodel.HomeViewModel
 import com.weatherdrive.viewmodel.UiState
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = remember { HomeViewModel() },
+    viewModel: HomeViewModel = koinViewModel<HomeViewModel>(),
     onShowClick: (Show) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()

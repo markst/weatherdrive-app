@@ -1,6 +1,7 @@
 package com.weatherdrive.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
-import com.weatherdrive.model.Show
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
@@ -94,12 +93,44 @@ private fun DownloadProgressState?.toDownloadStatus(): DownloadStatus {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetailScreen(
-    show: Show,
+    showId: Long,
     onBack: () -> Unit = {}
 ) {
-    val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(show) }
-    
-    DisposableEffect(show.id) {
+    val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(showId) }
+    val show by viewModel.show.collectAsState()
+
+    // Show loading state while fetching show data
+    if (show == null) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Loading...") },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        return
+    }
+
+    val currentShow = show!!
+
+    DisposableEffect(showId) {
         onDispose {
             viewModel.stop()
         }
@@ -109,7 +140,7 @@ fun ShowDetailScreen(
     val downloads by viewModel.downloadManager.downloads.collectAsState()
     
     // Map download progress to UI state
-    val downloadStates = show.filelist.associate { fileItem ->
+    val downloadStates = currentShow.filelist.associate { fileItem ->
         val downloadProgress = downloads[fileItem.googleDriveId]
         fileItem.googleDriveId to DownloadUiState(
             status = downloadProgress?.state.toDownloadStatus(),
@@ -124,7 +155,7 @@ fun ShowDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(show.title) },
+                title = { Text(currentShow.title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -143,10 +174,10 @@ fun ShowDetailScreen(
                 .padding(16.dp)
         ) {
             item {
-                if (!show.thumbnail.isNullOrBlank()) {
+                if (!currentShow.thumbnail.isNullOrBlank()) {
                     AsyncImage(
-                        model = show.thumbnail,
-                        contentDescription = show.title,
+                        model = currentShow.thumbnail,
+                        contentDescription = currentShow.title,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
@@ -157,14 +188,14 @@ fun ShowDetailScreen(
                 }
 
                 Text(
-                    text = show.title,
+                    text = currentShow.title,
                     style = MaterialTheme.typography.headlineMedium
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Year: ${show.year}",
+                    text = "Year: ${currentShow.year}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -172,12 +203,12 @@ fun ShowDetailScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Category: ${show.category.replaceFirstChar { it.uppercase() }}",
+                    text = "Category: ${currentShow.category.replaceFirstChar { it.uppercase() }}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                if (show.filelist.isNotEmpty()) {
+                if (currentShow.filelist.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
@@ -189,7 +220,7 @@ fun ShowDetailScreen(
                 }
             }
 
-            items(show.filelist) { fileItem ->
+            items(currentShow.filelist) { fileItem ->
                 val downloadState = downloadStates[fileItem.googleDriveId] ?: DownloadUiState()
                 val isCurrentlyPlaying = playbackState.currentFileId == fileItem.googleDriveId
                 FileItemCard(
@@ -293,7 +324,14 @@ private fun FileItemCard(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    else -> { /* No download indicator for IDLE/PAUSED */ }
+                    DownloadStatus.IDLE, DownloadStatus.PAUSED -> {
+                        IconButton(onClick = onDownloadClick) {
+                            Text(
+                                text = "⬇",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+                    }
                 }
             }
 
@@ -360,7 +398,7 @@ private fun PlaybackControlButton(
         isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.PLAYING -> {
             IconButton(onClick = onPauseClick) {
                 Icon(
-                    imageVector = Icons.Default.Pause,
+                    imageVector = Icons.Default.Close, // TODO: Replace with pause icon when available
                     contentDescription = "Pause",
                     tint = MaterialTheme.colorScheme.primary
                 )

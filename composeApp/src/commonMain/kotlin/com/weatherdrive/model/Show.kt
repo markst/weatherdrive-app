@@ -2,10 +2,11 @@ package com.weatherdrive.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.LongAsStringSerializer
 
 @Serializable
 data class Show(
-    val id: String = "",
+    val id: Long,
     @SerialName("title")
     val titles: List<String> = emptyList(),
     val thumbnail: String? = null,
