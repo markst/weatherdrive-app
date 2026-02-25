@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -27,14 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.weatherdrive.player.PlaybackUiState
+import com.weatherdrive.util.formatDuration
 import com.weatherdrive.viewmodel.PlayerViewModel
 import dev.markturnip.expandable.MinimizableHandler
-import dev.markturnip.radioplayer.PlaybackState
 
 /**
  * PlayerView composable that displays playback information.
@@ -223,7 +221,7 @@ private fun ProgressSection(playbackState: PlaybackUiState) {
     ) {
         val progress = playbackState.progress
         val progressFraction = if (progress != null && progress.duration > 0) {
-            (progress.currentTime / progress.duration).toFloat().coerceIn(0f, 1f)
+            (progress.elapsed / progress.duration).toFloat().coerceIn(0f, 1f)
         } else {
             0f
         }
@@ -245,28 +243,15 @@ private fun ProgressSection(playbackState: PlaybackUiState) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = formatTime(progress?.currentTime ?: 0.0),
+                text = (progress?.elapsed ?: 0.0).formatDuration(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = formatTime(progress?.duration ?: 0.0),
+                text = (progress?.duration ?: 0.0).formatDuration(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-}
-
-private fun formatTime(seconds: Double): String {
-    val totalSeconds = seconds.toInt()
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val secs = totalSeconds % 60
-    
-    return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, secs)
-    } else {
-        String.format("%d:%02d", minutes, secs)
     }
 }
