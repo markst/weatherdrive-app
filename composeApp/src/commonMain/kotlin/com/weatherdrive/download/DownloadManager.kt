@@ -10,6 +10,11 @@ import com.linroid.ketch.core.Ketch
 import com.linroid.ketch.engine.KtorHttpEngine
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.network.WeatherdriveApi
+import com.weatherdrive.persistence.deleteFile
+import com.weatherdrive.persistence.fileExists
+import com.weatherdrive.persistence.listFiles
+import com.weatherdrive.persistence.readFile
+import com.weatherdrive.persistence.writeFile
 import com.weatherdrive.util.sanitizeForFilename
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 data class DownloadProgress(
     val fileItem: FileItem,
@@ -42,6 +48,7 @@ sealed class DownloadProgressState {
 /**
  * Manages file downloads using Ketch library.
  * Tracks download progress for multiple files identified by googleDriveId.
+ * Persists download metadata so completed downloads survive app restarts.
  */
 class DownloadManager(
     private val api: WeatherdriveApi = WeatherdriveApi()
@@ -61,6 +68,10 @@ class DownloadManager(
     val downloads: StateFlow<Map<String, DownloadProgress>> = _downloads.asStateFlow()
 
     private val activeTasks = mutableMapOf<String, DownloadTask>()
+
+    init {
+        loadPersistedDownloads()
+    }
 
     fun startDownload(fileItem: FileItem) {
         scope.launch {
@@ -174,6 +185,7 @@ class DownloadManager(
                         progress = 1f
                     )
                 }
+                saveMetadata(fileItem)
                 activeTasks.remove(fileItem.googleDriveId)
             }
             is DownloadState.Failed -> {
@@ -219,12 +231,79 @@ class DownloadManager(
             activeTasks[fileItem.googleDriveId]?.cancel()
             activeTasks.remove(fileItem.googleDriveId)
             _downloads.update { it - fileItem.googleDriveId }
+            deleteMetadata(fileItem)
         }
     }
 
     fun close() {
         ketch.close()
     }
+
+    /**
+     * Saves FileItem metadata to a JSON file alongside the downloaded mp3,
+     * so the completed download state can be restored after app restarts.
+     */
+    private fun saveMetadata(fileItem: FileItem) {
+        scope.launch {
+            try {
+                val json = Json.encodeToString(FileItem.serializer(), fileItem)
+                writeFile(metadataPath(fileItem.googleDriveId), json)
+            } catch (e: Exception) {
+                // Silently ignore metadata save errors
+            }
+        }
+    }
+
+    /**
+     * Deletes the persisted metadata file for a given FileItem.
+     */
+    private fun deleteMetadata(fileItem: FileItem) {
+        try {
+            deleteFile(metadataPath(fileItem.googleDriveId))
+        } catch (e: Exception) {
+            // Silently ignore metadata delete errors
+        }
+    }
+
+    /**
+     * Scans the download directory for persisted metadata files and restores
+     * completed download state for any files whose mp3 is still present on disk.
+     */
+    private fun loadPersistedDownloads() {
+        scope.launch {
+            try {
+                val files = listFiles(downloadDirectory)
+                val restored = files
+                    .filter { it.endsWith("_metadata.json") }
+                    .mapNotNull { metadataPath ->
+                        try {
+                            val json = readFile(metadataPath) ?: return@mapNotNull null
+                            val fileItem = Json.decodeFromString<FileItem>(json)
+                            val mp3Path = "$downloadDirectory/${generateFilename(fileItem)}"
+                            if (fileExists(mp3Path)) fileItem else null
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                if (restored.isNotEmpty()) {
+                    _downloads.update { current ->
+                        current + restored.associate { fileItem ->
+                            fileItem.googleDriveId to DownloadProgress(
+                                fileItem = fileItem,
+                                state = DownloadProgressState.Completed,
+                                progress = 1f
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Silently ignore errors when loading persisted downloads
+            }
+        }
+    }
+
+    private fun metadataPath(googleDriveId: String): String =
+        "$downloadDirectory/${googleDriveId}_metadata.json"
 
     /**
      * Gets the local file path for a downloaded file.
