@@ -1,5 +1,6 @@
 package com.weatherdrive.di
 
+import com.weatherdrive.database.DatabaseDriverFactory
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.model.Show
 import com.weatherdrive.network.WeatherdriveApi
@@ -14,7 +15,8 @@ import org.koin.dsl.module
  * iOS-specific Koin module providing platform dependencies.
  */
 val iosModule = module {
-    single { DownloadManager(get<WeatherdriveApi>()) }
+    single { DatabaseDriverFactory() }
+    single { DownloadManager(get<WeatherdriveApi>(), get()) }
     single { PlatformMediaPlayer() }
     single { PlayerService(get()) }
     single { PlayerViewModel(get()) }
