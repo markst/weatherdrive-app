@@ -1,7 +1,6 @@
 package com.weatherdrive.di
 
 import com.weatherdrive.download.DownloadManager
-import com.weatherdrive.model.Show
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.player.PlayerService
 import com.weatherdrive.viewmodel.ShowDetailViewModel
@@ -17,9 +16,10 @@ val androidModule = module {
     single { PlatformMediaPlayer() }
     single { PlayerService(get()) }
     
-    viewModel { (show: Show) ->
+    viewModel { (showId: Long) ->
         ShowDetailViewModel(
-            show = show,
+            showId = showId,
+            repository = get(),
             playerService = get(),
             downloadManager = get()
         )

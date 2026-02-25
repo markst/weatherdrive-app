@@ -1,12 +1,11 @@
 package com.weatherdrive.viewmodel
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.weatherdrive.model.CategoryNode
 import com.weatherdrive.model.Show
 import com.weatherdrive.model.YearNode
-import com.weatherdrive.network.WeatherdriveApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import com.weatherdrive.repository.ShowRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,10 +20,7 @@ sealed class UiState {
     data class Error(val message: String) : UiState()
 }
 
-class HomeViewModel {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val api = WeatherdriveApi()
-
+class HomeViewModel(private val repository: ShowRepository) : ViewModel() {
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1).also {
         it.tryEmit(Unit)
     }
@@ -34,17 +30,17 @@ class HomeViewModel {
             flow {
                 emit(UiState.Loading)
                 try {
-                    val shows = api.fetchShows()
+                    val shows = repository.fetchShows()
                     emit(UiState.Success(buildTree(shows)))
                 } catch (e: Exception) {
                     emit(UiState.Error(e.message ?: "Unknown error"))
                 }
             }
         }
-        .stateIn(scope, SharingStarted.WhileSubscribed(5_000), UiState.Loading)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState.Loading)
 
     fun refresh() {
-        scope.launch { refreshTrigger.emit(Unit) }
+        viewModelScope.launch { refreshTrigger.emit(Unit) }
     }
 
     private fun buildTree(shows: List<Show>): List<YearNode> {

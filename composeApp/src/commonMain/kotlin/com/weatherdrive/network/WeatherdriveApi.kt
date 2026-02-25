@@ -5,6 +5,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -53,14 +54,16 @@ class WeatherdriveApi {
 
     @Throws(Exception::class)
     private suspend fun fetchDate(): String {
-        return client.get("$BASE_URL/token").body<TokenResponse>().date
+        val raw = client.get("$BASE_URL/token").bodyAsText()
+        println("fetchDate raw: $raw")
+        return Json.decodeFromString<TokenResponse>(raw).date
     }
 
     @Throws(Exception::class)
     suspend fun fetchShows(): List<Show> {
         val date = fetchDate()
-        val response = client.get("$BASE_URL/drvr/$date").body<ShowsResponse>()
-        return response.list.flatMap { it.list }
+        val raw = client.get("$BASE_URL/drvr/$date").bodyAsText()
+        return json.decodeFromString<ShowsResponse>(raw).list.flatMap { it.list }
     }
 
     @Throws(Exception::class)

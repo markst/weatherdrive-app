@@ -73,7 +73,7 @@ actual class AppCoordinator(
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
             ShowDetailScreen(
-                show = show,
+                showId = show.id,
                 onBack = { navigateBack() }
             )
         }

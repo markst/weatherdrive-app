@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Show(
-    val id: String = "",
+    val id: Long,
     @SerialName("title")
     val titles: List<String> = emptyList(),
     val thumbnail: String? = null,
