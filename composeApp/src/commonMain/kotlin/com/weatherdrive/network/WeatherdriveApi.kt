@@ -36,25 +36,34 @@ data class FileAccessResponse(
     val credentials: FileCredentials = FileCredentials()
 )
 
+@Serializable
+private data class ShowsResponse(val date: String, val list: List<YearGroup>)
+
+@Serializable
+private data class YearGroup(val list: List<Show>)
+
 class WeatherdriveApi {
+    private val json = Json { ignoreUnknownKeys = true }
+
     private val client = HttpClient {
         install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
+            json(json)
         }
     }
 
+    @Throws(Exception::class)
     private suspend fun fetchDate(): String {
         return client.get("$BASE_URL/token").body<TokenResponse>().date
     }
 
+    @Throws(Exception::class)
     suspend fun fetchShows(): List<Show> {
         val date = fetchDate()
-        return client.get("$BASE_URL/drvr/$date").body()
+        val response = client.get("$BASE_URL/drvr/$date").body<ShowsResponse>()
+        return response.list.flatMap { it.list }
     }
 
+    @Throws(Exception::class)
     suspend fun fetchFileAccess(googleDriveId: String): FileAccessResponse {
         return client.get("$FILE_API_URL/file/$googleDriveId").body()
     }
