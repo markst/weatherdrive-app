@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS DownloadedFile (
+    googleDriveId TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    fileSizeInMB INTEGER NOT NULL,
+    timeInSeconds INTEGER NOT NULL,
+    largerThan100MB INTEGER NOT NULL
+);
+
+insertDownloadedFile:
+INSERT OR REPLACE INTO DownloadedFile (googleDriveId, title, fileSizeInMB, timeInSeconds, largerThan100MB)
+VALUES (:googleDriveId, :title, :fileSizeInMB, :timeInSeconds, :largerThan100MB);
+
+deleteDownloadedFile:
+DELETE FROM DownloadedFile WHERE googleDriveId = :googleDriveId;
+
+getAllDownloadedFiles:
+SELECT * FROM DownloadedFile;

@@ -1,11 +1,13 @@
 package com.weatherdrive.di
 
+import com.weatherdrive.database.DatabaseDriverFactory
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.player.PlayerService
 import com.weatherdrive.viewmodel.PlayerViewModel
 import com.weatherdrive.viewmodel.ShowDetailViewModel
 import dev.markturnip.radioplayer.PlatformMediaPlayer
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -13,7 +15,8 @@ import org.koin.dsl.module
  * Android-specific Koin module providing platform dependencies.
  */
 val androidModule = module {
-    single { DownloadManager(get<WeatherdriveApi>()) }
+    single { DatabaseDriverFactory(androidContext()) }
+    single { DownloadManager(get<WeatherdriveApi>(), get()) }
     single { PlatformMediaPlayer() }
     single { PlayerService(get()) }
     single { PlayerViewModel(get()) }

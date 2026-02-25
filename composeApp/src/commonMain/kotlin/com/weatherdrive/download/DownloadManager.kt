@@ -8,13 +8,10 @@ import com.linroid.ketch.api.config.DownloadConfig
 import com.linroid.ketch.api.config.QueueConfig
 import com.linroid.ketch.core.Ketch
 import com.linroid.ketch.engine.KtorHttpEngine
+import com.weatherdrive.database.DownloadDatabase
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.network.WeatherdriveApi
-import com.weatherdrive.persistence.deleteFile
 import com.weatherdrive.persistence.fileExists
-import com.weatherdrive.persistence.listFiles
-import com.weatherdrive.persistence.readFile
-import com.weatherdrive.persistence.writeFile
 import com.weatherdrive.util.sanitizeForFilename
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +21,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 
 data class DownloadProgress(
     val fileItem: FileItem,
@@ -48,10 +44,11 @@ sealed class DownloadProgressState {
 /**
  * Manages file downloads using Ketch library.
  * Tracks download progress for multiple files identified by googleDriveId.
- * Persists download metadata so completed downloads survive app restarts.
+ * Persists download metadata via [DownloadDatabase] so completed downloads survive app restarts.
  */
 class DownloadManager(
-    private val api: WeatherdriveApi = WeatherdriveApi()
+    private val api: WeatherdriveApi,
+    private val database: DownloadDatabase
 ) {
     private val downloadDirectory: String = getDownloadDirectory()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -240,14 +237,13 @@ class DownloadManager(
     }
 
     /**
-     * Saves FileItem metadata to a JSON file alongside the downloaded mp3,
+     * Saves FileItem metadata to the database on download completion,
      * so the completed download state can be restored after app restarts.
      */
     private fun saveMetadata(fileItem: FileItem) {
         scope.launch {
             try {
-                val json = Json.encodeToString(FileItem.serializer(), fileItem)
-                writeFile(metadataPath(fileItem.googleDriveId), json)
+                database.insert(fileItem)
             } catch (e: Exception) {
                 // Silently ignore metadata save errors
             }
@@ -255,36 +251,28 @@ class DownloadManager(
     }
 
     /**
-     * Deletes the persisted metadata file for a given FileItem.
+     * Removes the persisted metadata for a given FileItem from the database.
      */
     private fun deleteMetadata(fileItem: FileItem) {
-        try {
-            deleteFile(metadataPath(fileItem.googleDriveId))
-        } catch (e: Exception) {
-            // Silently ignore metadata delete errors
+        scope.launch {
+            try {
+                database.delete(fileItem.googleDriveId)
+            } catch (e: Exception) {
+                // Silently ignore metadata delete errors
+            }
         }
     }
 
     /**
-     * Scans the download directory for persisted metadata files and restores
-     * completed download state for any files whose mp3 is still present on disk.
+     * Queries the database for all persisted downloads and restores completed
+     * download state for any entries whose mp3 file is still present on disk.
      */
     private fun loadPersistedDownloads() {
         scope.launch {
             try {
-                val files = listFiles(downloadDirectory)
-                val restored = files
-                    .filter { it.endsWith("_metadata.json") }
-                    .mapNotNull { metadataPath ->
-                        try {
-                            val json = readFile(metadataPath) ?: return@mapNotNull null
-                            val fileItem = Json.decodeFromString<FileItem>(json)
-                            val mp3Path = "$downloadDirectory/${generateFilename(fileItem)}"
-                            if (fileExists(mp3Path)) fileItem else null
-                        } catch (e: Exception) {
-                            null
-                        }
-                    }
+                val restored = database.getAll().filter { fileItem ->
+                    fileExists("$downloadDirectory/${generateFilename(fileItem)}")
+                }
                 if (restored.isNotEmpty()) {
                     _downloads.update { current ->
                         current + restored.associate { fileItem ->
@@ -301,9 +289,6 @@ class DownloadManager(
             }
         }
     }
-
-    private fun metadataPath(googleDriveId: String): String =
-        "$downloadDirectory/${googleDriveId}_metadata.json"
 
     /**
      * Gets the local file path for a downloaded file.
