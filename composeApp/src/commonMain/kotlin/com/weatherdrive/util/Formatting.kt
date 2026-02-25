@@ -25,6 +25,11 @@ fun Int.formatDuration(): String {
 }
 
 /**
+ * Formats seconds (as Double) into a human-readable duration string (e.g., "1:23:45" or "23:45").
+ */
+fun Double.formatDuration(): String = this.toInt().formatDuration()
+
+/**
  * Formats bytes per second into a human-readable speed string (e.g., "1.5 MB/s", "500 KB/s").
  */
 fun Long.formatSpeed(): String {
