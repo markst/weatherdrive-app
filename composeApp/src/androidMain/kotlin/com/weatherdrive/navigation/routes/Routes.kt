@@ -6,16 +6,19 @@ import kotlinx.serialization.Serializable
 /**
  * Navigation routes for the app.
  */
-@Serializable
-object HomeRoute
 
+// Browse tab routes
 @Serializable
-object DownloadsRoute
+object BrowseHomeRoute
 
 @Serializable
 data class ShowDetailRoute(
     val id: Long
 )
+
+// Downloads tab routes
+@Serializable
+object DownloadsHomeRoute
 
 /**
  * Extension function to convert a Show to a ShowDetailRoute.
