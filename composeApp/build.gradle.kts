@@ -53,6 +53,7 @@ kotlin {
             implementation(libs.ketch.core)
             implementation(libs.ketch.ktor)
             implementation("dev.markturnip:radioplayer")
+            implementation("dev.markturnip:expandable")
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

@@ -3,6 +3,7 @@ package com.weatherdrive.di
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.player.PlayerService
+import com.weatherdrive.viewmodel.PlayerViewModel
 import com.weatherdrive.viewmodel.ShowDetailViewModel
 import dev.markturnip.radioplayer.PlatformMediaPlayer
 import org.koin.core.module.dsl.viewModel
@@ -15,6 +16,7 @@ val androidModule = module {
     single { DownloadManager(get<WeatherdriveApi>()) }
     single { PlatformMediaPlayer() }
     single { PlayerService(get()) }
+    single { PlayerViewModel(get()) }
     
     viewModel { (showId: Long) ->
         ShowDetailViewModel(
