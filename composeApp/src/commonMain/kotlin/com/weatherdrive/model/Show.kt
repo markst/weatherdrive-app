@@ -2,6 +2,7 @@ package com.weatherdrive.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.LongAsStringSerializer
 
 @Serializable
 data class Show(

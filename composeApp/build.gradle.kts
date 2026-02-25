@@ -18,7 +18,6 @@ kotlin {
     }
 
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -34,7 +33,6 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.navigation.compose)
             implementation(libs.koin.android)
-            implementation("dev.markturnip.radioplayer:radioplayer")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -54,21 +52,21 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.ketch.core)
             implementation(libs.ketch.ktor)
+            implementation("dev.markturnip:radioplayer")
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation("dev.markturnip.radioplayer:radioplayer")
         }
     }
 }
 
 android {
-    namespace = "dev.markturnip.weatherdrive"
-    compileSdk = 34
+    namespace = "com.weatherdrive"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.markturnip.weatherdrive"
-        minSdk = 24
+        applicationId = "com.weatherdrive"
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

@@ -1,12 +1,13 @@
 package com.weatherdrive.download
 
-import com.linroid.ketch.core.DownloadConfig
-import com.linroid.ketch.core.DownloadRequest
-import com.linroid.ketch.core.DownloadState
-import com.linroid.ketch.core.DownloadTask
+import com.linroid.ketch.api.Destination
+import com.linroid.ketch.api.DownloadRequest
+import com.linroid.ketch.api.DownloadState
+import com.linroid.ketch.api.DownloadTask
+import com.linroid.ketch.api.config.DownloadConfig
+import com.linroid.ketch.api.config.QueueConfig
 import com.linroid.ketch.core.Ketch
-import com.linroid.ketch.core.QueueConfig
-import com.linroid.ketch.ktor.KtorHttpEngine
+import com.linroid.ketch.engine.KtorHttpEngine
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.util.sanitizeForFilename
@@ -98,8 +99,7 @@ class DownloadManager(
     ) {
         val request = DownloadRequest(
             url = downloadUrl,
-            directory = downloadDirectory,
-            filename = filename,
+            destination = Destination("$downloadDirectory/$filename"),
             headers = mapOf("Authorization" to "Bearer $accessToken")
         )
 
