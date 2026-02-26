@@ -97,10 +97,10 @@ fun ShowDetailScreen(
     onBack: () -> Unit = {}
 ) {
     val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(showId) }
-    val descriptor by viewModel.descriptor.collectAsState()
+    val show by viewModel.show.collectAsState()
 
     // Show loading state while fetching show data
-    if (descriptor == null) {
+    if (show == null) {
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -128,7 +128,7 @@ fun ShowDetailScreen(
         return
     }
 
-    val currentDescriptor = descriptor!!
+    val currentShow = show!!
 
     DisposableEffect(showId) {
         onDispose {
@@ -140,7 +140,7 @@ fun ShowDetailScreen(
     val downloads by viewModel.downloadManager.downloads.collectAsState()
 
     // Map download progress to UI state keyed by stream id
-    val downloadStates = currentDescriptor.streams.associate { stream ->
+    val downloadStates = currentShow.streams.associate { stream ->
         val downloadProgress = downloads[stream.id]
         stream.id to DownloadUiState(
             status = downloadProgress?.state.toDownloadStatus(),
@@ -155,7 +155,7 @@ fun ShowDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentDescriptor.title) },
+                title = { Text(currentShow.title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -174,10 +174,10 @@ fun ShowDetailScreen(
                 .padding(16.dp)
         ) {
             item {
-                if (!currentDescriptor.thumbnail.isNullOrBlank()) {
+                if (!currentShow.thumbnail.isNullOrBlank()) {
                     AsyncImage(
-                        model = currentDescriptor.thumbnail,
-                        contentDescription = currentDescriptor.title,
+                        model = currentShow.thumbnail,
+                        contentDescription = currentShow.title,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
@@ -188,14 +188,14 @@ fun ShowDetailScreen(
                 }
 
                 Text(
-                    text = currentDescriptor.title,
+                    text = currentShow.title,
                     style = MaterialTheme.typography.headlineMedium
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Date: ${currentDescriptor.date?.formatted ?: ""}",
+                    text = "Date: ${currentShow.date?.formatted ?: ""}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -203,12 +203,12 @@ fun ShowDetailScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Category: ${currentDescriptor.category?.formattedName ?: "Unknown"}",
+                    text = "Category: ${currentShow.category?.formattedName ?: "Unknown"}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                if (currentDescriptor.streams.isNotEmpty()) {
+                if (currentShow.streams.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
@@ -220,7 +220,7 @@ fun ShowDetailScreen(
                 }
             }
 
-            items(currentDescriptor.streams) { stream ->
+            items(currentShow.streams) { stream ->
                 val downloadState = downloadStates[stream.id] ?: DownloadUiState()
                 val isCurrentlyPlaying = playbackState.currentFileId == stream.id
                 StreamCard(

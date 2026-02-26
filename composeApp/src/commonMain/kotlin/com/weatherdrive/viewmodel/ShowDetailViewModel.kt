@@ -35,8 +35,8 @@ class ShowDetailViewModel(
     private val playerService: PlayerService,
     val downloadManager: DownloadManager
 ) : ViewModel() {
-    private val _descriptor = MutableStateFlow<ShowItem?>(null)
-    val descriptor: StateFlow<ShowItem?> = _descriptor.asStateFlow()
+    private val _show = MutableStateFlow<ShowItem?>(null)
+    val show: StateFlow<ShowItem?> = _show.asStateFlow()
 
     /** Cached lookup of FileItem by googleDriveId for O(1) stream operations. */
     private var fileItemIndex: Map<String, FileItem> = emptyMap()
@@ -51,7 +51,7 @@ class ShowDetailViewModel(
         viewModelScope.launch {
             val show = repository.getShowById(showId)
             fileItemIndex = show?.filelist?.associateBy { it.googleDriveId } ?: emptyMap()
-            _descriptor.value = show?.let { ShowItem.from(it) }
+            _show.value = show?.let { ShowItem.from(it) }
         }
     }
 
@@ -65,10 +65,10 @@ class ShowDetailViewModel(
         val mediaItem = FileItemMediaPlayer(
             id = fileItem.googleDriveId,
             title = fileItem.title,
-            artist = _descriptor.value?.title ?: "",
+            artist = _show.value?.title ?: "",
             url = localPath,
             isLive = false,
-            artworkUrl = _descriptor.value?.thumbnail
+            artworkUrl = _show.value?.thumbnail
         )
         playerService.playItem(mediaItem)
     }
