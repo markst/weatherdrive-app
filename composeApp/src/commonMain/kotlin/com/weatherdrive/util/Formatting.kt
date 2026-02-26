@@ -1,6 +1,7 @@
 package com.weatherdrive.util
 
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.ShowItem
 
 /**
  * Formats file information combining size and duration.
@@ -55,4 +56,25 @@ fun Double.formatTime(): String {
  */
 fun String.sanitizeForFilename(): String {
     return this.replace(Regex("[^a-zA-Z0-9\\s-]"), "").trim()
+}
+
+/**
+ * Formats an Int representing megabytes into a human-readable file size string
+ * (e.g., "120.5 MB", "500.0 KB").
+ */
+fun Int.formatFileSize(): String {
+    val bytes = this * 1_000_000L
+    return when {
+        bytes >= 1_000_000 -> String.format("%.1f MB", bytes / 1_000_000.0)
+        bytes >= 1_000 -> String.format("%.1f KB", bytes / 1_000.0)
+        else -> "$bytes B"
+    }
+}
+
+/**
+ * Formats stream information combining file size and duration.
+ */
+fun ShowItem.Stream.formatInfo(): String {
+    val duration = timeInSeconds.formatDuration()
+    return fileSize?.let { "$it • $duration" } ?: duration
 }
