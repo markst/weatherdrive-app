@@ -40,7 +40,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.weatherdrive.download.DownloadProgressState
-import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.ShowDescriptor
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
@@ -97,10 +97,10 @@ fun ShowDetailScreen(
     onBack: () -> Unit = {}
 ) {
     val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(showId) }
-    val show by viewModel.show.collectAsState()
+    val descriptor by viewModel.descriptor.collectAsState()
 
     // Show loading state while fetching show data
-    if (show == null) {
+    if (descriptor == null) {
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -128,21 +128,21 @@ fun ShowDetailScreen(
         return
     }
 
-    val currentShow = show!!
+    val currentDescriptor = descriptor!!
 
     DisposableEffect(showId) {
         onDispose {
             viewModel.stop()
         }
     }
-    
+
     val playbackState by viewModel.playbackState.collectAsState()
     val downloads by viewModel.downloadManager.downloads.collectAsState()
-    
-    // Map download progress to UI state
-    val downloadStates = currentShow.filelist.associate { fileItem ->
-        val downloadProgress = downloads[fileItem.googleDriveId]
-        fileItem.googleDriveId to DownloadUiState(
+
+    // Map download progress to UI state keyed by stream id
+    val downloadStates = currentDescriptor.streams.associate { stream ->
+        val downloadProgress = downloads[stream.id]
+        stream.id to DownloadUiState(
             status = downloadProgress?.state.toDownloadStatus(),
             progress = downloadProgress?.progress ?: 0f,
             bytesPerSecond = downloadProgress?.bytesPerSecond ?: 0,
@@ -151,11 +151,11 @@ fun ShowDetailScreen(
             error = downloadProgress?.error
         )
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentShow.title) },
+                title = { Text(currentDescriptor.title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -174,10 +174,10 @@ fun ShowDetailScreen(
                 .padding(16.dp)
         ) {
             item {
-                if (!currentShow.thumbnail.isNullOrBlank()) {
+                if (!currentDescriptor.thumbnail.isNullOrBlank()) {
                     AsyncImage(
-                        model = currentShow.thumbnail,
-                        contentDescription = currentShow.title,
+                        model = currentDescriptor.thumbnail,
+                        contentDescription = currentDescriptor.title,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
@@ -188,14 +188,14 @@ fun ShowDetailScreen(
                 }
 
                 Text(
-                    text = currentShow.title,
+                    text = currentDescriptor.title,
                     style = MaterialTheme.typography.headlineMedium
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Year: ${currentShow.year}",
+                    text = "Year: ${currentDescriptor.year}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -203,12 +203,12 @@ fun ShowDetailScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Category: ${currentShow.category.replaceFirstChar { it.uppercase() }}",
+                    text = "Category: ${currentDescriptor.category?.formattedName ?: "Unknown"}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                if (currentShow.filelist.isNotEmpty()) {
+                if (currentDescriptor.streams.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
@@ -220,17 +220,17 @@ fun ShowDetailScreen(
                 }
             }
 
-            items(currentShow.filelist) { fileItem ->
-                val downloadState = downloadStates[fileItem.googleDriveId] ?: DownloadUiState()
-                val isCurrentlyPlaying = playbackState.currentFileId == fileItem.googleDriveId
-                FileItemCard(
-                    fileItem = fileItem,
+            items(currentDescriptor.streams) { stream ->
+                val downloadState = downloadStates[stream.id] ?: DownloadUiState()
+                val isCurrentlyPlaying = playbackState.currentFileId == stream.id
+                StreamCard(
+                    stream = stream,
                     downloadState = downloadState,
                     isCurrentlyPlaying = isCurrentlyPlaying,
                     playbackState = if (isCurrentlyPlaying) playbackState else null,
-                    onDownloadClick = { viewModel.startDownload(fileItem) },
-                    onCancelClick = { viewModel.cancelDownload(fileItem) },
-                    onPlayClick = { viewModel.playFile(fileItem) },
+                    onDownloadClick = { viewModel.startDownload(stream.id) },
+                    onCancelClick = { viewModel.cancelDownload(stream.id) },
+                    onPlayClick = { viewModel.playStream(stream.id) },
                     onPauseClick = { viewModel.togglePlayPause() }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -240,8 +240,8 @@ fun ShowDetailScreen(
 }
 
 @Composable
-private fun FileItemCard(
-    fileItem: FileItem,
+private fun StreamCard(
+    stream: ShowDescriptor.Stream,
     downloadState: DownloadUiState,
     isCurrentlyPlaying: Boolean,
     playbackState: PlaybackUiState?,
@@ -273,12 +273,12 @@ private fun FileItemCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = fileItem.title,
+                        text = stream.title,
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = fileItem.formatInfo(),
+                        text = stream.formatInfo(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -341,7 +341,7 @@ private fun FileItemCard(
             }
 
             // Download progress
-            if (downloadState.status == DownloadStatus.DOWNLOADING || 
+            if (downloadState.status == DownloadStatus.DOWNLOADING ||
                 downloadState.status == DownloadStatus.PAUSED) {
                 Spacer(modifier = Modifier.height(12.dp))
                 LinearProgressIndicator(
@@ -445,3 +445,4 @@ private fun PlaybackProgressIndicator(progress: Progress) {
         }
     }
 }
+

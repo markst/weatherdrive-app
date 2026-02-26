@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.model.FileItem
-import com.weatherdrive.model.Show
+import com.weatherdrive.model.ShowDescriptor
 import com.weatherdrive.player.PlayerService
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.repository.ShowRepository
@@ -35,64 +35,72 @@ class ShowDetailViewModel(
     private val playerService: PlayerService,
     val downloadManager: DownloadManager
 ) : ViewModel() {
-    private val _show = MutableStateFlow<Show?>(null)
-    val show: StateFlow<Show?> = _show.asStateFlow()
+    private val _descriptor = MutableStateFlow<ShowDescriptor?>(null)
+    val descriptor: StateFlow<ShowDescriptor?> = _descriptor.asStateFlow()
+
+    /** Cached lookup of FileItem by googleDriveId for O(1) stream operations. */
+    private var fileItemIndex: Map<String, FileItem> = emptyMap()
 
     val playbackState: StateFlow<PlaybackUiState> = playerService.playbackState
-    
+
     init {
         loadShow()
     }
 
     private fun loadShow() {
         viewModelScope.launch {
-            _show.value = repository.getShowById(showId)
+            val show = repository.getShowById(showId)
+            fileItemIndex = show?.filelist?.associateBy { it.googleDriveId } ?: emptyMap()
+            _descriptor.value = show?.let { ShowDescriptor.from(it) }
         }
     }
 
     /**
-     * Play a file item using its local file path.
+     * Play the stream identified by [streamId] using its local file path.
      * Only plays if the file has been downloaded.
      */
-    fun playFile(fileItem: FileItem) {
-        val currentShow = _show.value ?: return
+    fun playStream(streamId: String) {
+        val fileItem = fileItemIndex[streamId] ?: return
         val localPath = downloadManager.getLocalFilePath(fileItem) ?: return
         val mediaItem = FileItemMediaPlayer(
             id = fileItem.googleDriveId,
             title = fileItem.title,
-            artist = currentShow.title,
+            artist = _descriptor.value?.title ?: "",
             url = localPath,
             isLive = false,
-            artworkUrl = currentShow.thumbnail
+            artworkUrl = _descriptor.value?.thumbnail
         )
         playerService.playItem(mediaItem)
     }
-    
+
     /**
      * Toggle play/pause.
      */
     fun togglePlayPause() {
         playerService.togglePlayPause()
     }
-    
+
     /**
      * Stop playback.
      */
     fun stop() {
         playerService.stop()
     }
-    
+
     /**
-     * Start downloading a file.
+     * Start downloading the stream identified by [streamId].
      */
-    fun startDownload(fileItem: FileItem) {
+    fun startDownload(streamId: String) {
+        val fileItem = fileItemIndex[streamId] ?: return
         downloadManager.startDownload(fileItem)
     }
-    
+
     /**
-     * Cancel downloading a file.
+     * Cancel downloading the stream identified by [streamId].
      */
-    fun cancelDownload(fileItem: FileItem) {
+    fun cancelDownload(streamId: String) {
+        val fileItem = fileItemIndex[streamId] ?: return
         downloadManager.cancelDownload(fileItem)
     }
 }
+
