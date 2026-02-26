@@ -40,7 +40,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.weatherdrive.download.DownloadProgressState
-import com.weatherdrive.model.ShowDescriptor
+import com.weatherdrive.model.ShowItem
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
@@ -195,7 +195,7 @@ fun ShowDetailScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Year: ${currentDescriptor.year}",
+                    text = "Date: ${currentDescriptor.date?.formatted ?: ""}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -241,7 +241,7 @@ fun ShowDetailScreen(
 
 @Composable
 private fun StreamCard(
-    stream: ShowDescriptor.Stream,
+    stream: ShowItem.Stream,
     downloadState: DownloadUiState,
     isCurrentlyPlaying: Boolean,
     playbackState: PlaybackUiState?,

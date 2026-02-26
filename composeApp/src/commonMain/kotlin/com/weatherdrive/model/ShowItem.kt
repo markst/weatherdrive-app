@@ -4,13 +4,13 @@ import com.weatherdrive.util.formatFileSize
 
 /**
  * Interstitial presentation model that transforms a [Show] domain model into
- * display-ready data, including formatted title, category enum, and typed streams.
+ * display-ready data, including formatted title, category enum, typed streams, and a structured date.
  */
-data class ShowDescriptor(
+data class ShowItem(
     val id: Long,
     val title: String,
     val category: Category?,
-    val year: String,
+    val date: ShowDate?,
     val thumbnail: String?,
     val streams: List<Stream>,
     val totalDuration: Int
@@ -44,11 +44,11 @@ data class ShowDescriptor(
     }
 
     companion object {
-        fun from(show: Show): ShowDescriptor = ShowDescriptor(
+        fun from(show: Show): ShowItem = ShowItem(
             id = show.id,
             title = show.titles.joinToString(", "),
             category = Category.fromValue(show.category),
-            year = show.year,
+            date = show.date,
             thumbnail = show.thumbnail,
             streams = show.filelist.map { fileItem ->
                 Stream.GoogleDrive(
@@ -62,3 +62,4 @@ data class ShowDescriptor(
         )
     }
 }
+

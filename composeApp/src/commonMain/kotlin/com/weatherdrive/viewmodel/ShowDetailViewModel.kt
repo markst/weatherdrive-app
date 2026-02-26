@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.model.FileItem
-import com.weatherdrive.model.ShowDescriptor
+import com.weatherdrive.model.ShowItem
 import com.weatherdrive.player.PlayerService
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.repository.ShowRepository
@@ -35,8 +35,8 @@ class ShowDetailViewModel(
     private val playerService: PlayerService,
     val downloadManager: DownloadManager
 ) : ViewModel() {
-    private val _descriptor = MutableStateFlow<ShowDescriptor?>(null)
-    val descriptor: StateFlow<ShowDescriptor?> = _descriptor.asStateFlow()
+    private val _descriptor = MutableStateFlow<ShowItem?>(null)
+    val descriptor: StateFlow<ShowItem?> = _descriptor.asStateFlow()
 
     /** Cached lookup of FileItem by googleDriveId for O(1) stream operations. */
     private var fileItemIndex: Map<String, FileItem> = emptyMap()
@@ -51,7 +51,7 @@ class ShowDetailViewModel(
         viewModelScope.launch {
             val show = repository.getShowById(showId)
             fileItemIndex = show?.filelist?.associateBy { it.googleDriveId } ?: emptyMap()
-            _descriptor.value = show?.let { ShowDescriptor.from(it) }
+            _descriptor.value = show?.let { ShowItem.from(it) }
         }
     }
 

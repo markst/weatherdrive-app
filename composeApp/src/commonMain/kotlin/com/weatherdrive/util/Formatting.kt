@@ -1,7 +1,7 @@
 package com.weatherdrive.util
 
 import com.weatherdrive.model.FileItem
-import com.weatherdrive.model.ShowDescriptor
+import com.weatherdrive.model.ShowItem
 
 /**
  * Formats file information combining size and duration.
@@ -74,7 +74,7 @@ fun Int.formatFileSize(): String {
 /**
  * Formats stream information combining file size and duration.
  */
-fun ShowDescriptor.Stream.formatInfo(): String {
+fun ShowItem.Stream.formatInfo(): String {
     val duration = timeInSeconds.formatDuration()
     return fileSize?.let { "$it • $duration" } ?: duration
 }
