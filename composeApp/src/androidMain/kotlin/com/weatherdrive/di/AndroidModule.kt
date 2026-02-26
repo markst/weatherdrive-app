@@ -31,5 +31,5 @@ val androidModule = module {
         )
     }
     
-    viewModel { DownloadsListViewModel(get()) }
+    viewModel { DownloadsListViewModel(get(), get()) }
 }
