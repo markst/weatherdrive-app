@@ -1,6 +1,7 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -50,18 +51,13 @@ actual class AppCoordinator actual constructor() {
                 }
             }
         ) { paddingValues ->
-            when (selectedTab) {
-                0 -> {
-                    Box(
-                        modifier = Modifier.padding(paddingValues)
-                    ) {
-                        browseCoordinator.Content()
-                    }
-                }
-                1 -> {
-                    Box(
-                        modifier = Modifier.padding(paddingValues)
-                    ) {
+            Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+                // Browse is always kept in the composition so its navigation state
+                // (NavController back-stack) is preserved when switching to other tabs.
+                browseCoordinator.Content()
+                // Downloads overlays Browse when its tab is selected.
+                if (selectedTab == 1) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         downloadsCoordinator.Content()
                     }
                 }
