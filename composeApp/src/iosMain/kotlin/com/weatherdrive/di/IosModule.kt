@@ -30,5 +30,5 @@ val iosModule = module {
         )
     }
     
-    viewModel { DownloadsListViewModel(get()) }
+    viewModel { DownloadsListViewModel(get(), get()) }
 }

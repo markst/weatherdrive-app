@@ -1,6 +1,8 @@
 package com.weatherdrive.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -101,6 +103,7 @@ fun DownloadsListScreen(
                 ) { downloadProgress ->
                     DownloadItemCard(
                         downloadProgress = downloadProgress,
+                        onPlayClick = { viewModel.playFile(downloadProgress.fileItem) },
                         onDeleteClick = { itemToDelete = downloadProgress.fileItem }
                     )
                 }
@@ -138,12 +141,15 @@ fun DownloadsListScreen(
 @Composable
 private fun DownloadItemCard(
     downloadProgress: DownloadProgress,
+    onPlayClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     val fileItem = downloadProgress.fileItem
     
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onPlayClick, role = Role.Button),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
