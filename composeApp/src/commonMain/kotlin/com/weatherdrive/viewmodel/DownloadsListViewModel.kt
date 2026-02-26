@@ -6,17 +6,7 @@ import com.weatherdrive.download.DownloadProgress
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.player.PlayerService
-import dev.markturnip.radioplayer.MediaPlayerItem
 import kotlinx.coroutines.flow.StateFlow
-
-private class FileItemMediaPlayer(
-    override val id: String,
-    override val title: String,
-    override val artist: String,
-    override val url: String,
-    override val isLive: Boolean,
-    override val artworkUrl: String?
-) : MediaPlayerItem
 
 /**
  * ViewModel for the DownloadsListScreen managing the list of completed downloads.

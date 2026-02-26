@@ -8,23 +8,10 @@ import com.weatherdrive.model.ShowItem
 import com.weatherdrive.player.PlayerService
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.repository.ShowRepository
-import dev.markturnip.radioplayer.MediaPlayerItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-/**
- * Adapter to convert FileItem to MediaPlayerItem.
- */
-private class FileItemMediaPlayer(
-    override val id: String,
-    override val title: String,
-    override val artist: String,
-    override val url: String,
-    override val isLive: Boolean,
-    override val artworkUrl: String?
-) : MediaPlayerItem
 
 /**
  * ViewModel for the ShowDetailScreen managing playback and download state.
