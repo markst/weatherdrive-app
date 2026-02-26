@@ -6,12 +6,15 @@ import kotlinx.serialization.Serializable
 /**
  * Navigation routes for the app.
  */
+
+// Tab routes
 @Serializable
-object HomeRoute
+object BrowseHomeRoute
 
 @Serializable
-object DownloadsRoute
+object DownloadsHomeRoute
 
+// Detail routes
 @Serializable
 data class ShowDetailRoute(
     val id: Long

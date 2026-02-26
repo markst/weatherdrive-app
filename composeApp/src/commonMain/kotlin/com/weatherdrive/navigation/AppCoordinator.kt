@@ -1,22 +1,16 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
-import com.weatherdrive.model.Show
 
 /**
- * Platform-specific coordinator for navigation.
+ * Platform-specific app coordinator for the tab bar.
  * 
- * On Android: Owns navigation state and provides Content() composable
- * On iOS: Owns UINavigationController and handles push/pop navigation
+ * On Android: Uses bottom navigation with NavHost
+ * On iOS: Uses UITabBarController to host tab coordinators
  */
 expect class AppCoordinator() {
-    fun navigateToShowDetail(show: Show)
-    fun navigateToDownloads()
-    fun navigateBack()
-
     /**
-     * Composable content that renders the current screen.
-     * Used on Android to embed navigation in the App composable.
+     * Composable content that renders the tab bar interface.
      */
     @Composable
     fun Content()

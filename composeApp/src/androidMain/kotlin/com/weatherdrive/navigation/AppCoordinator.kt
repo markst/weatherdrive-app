@@ -1,74 +1,71 @@
 package com.weatherdrive.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
-import com.weatherdrive.model.Show
-import com.weatherdrive.navigation.routes.DownloadsRoute
-import com.weatherdrive.navigation.routes.HomeRoute
-import com.weatherdrive.navigation.routes.ShowDetailRoute
-import com.weatherdrive.navigation.routes.toRoute
-import com.weatherdrive.ui.DownloadsListScreen
-import com.weatherdrive.ui.HomeScreen
-import com.weatherdrive.ui.ShowDetailScreen
+import androidx.compose.ui.Modifier
 
 /**
  * Android implementation of AppCoordinator.
- * Uses Jetpack Compose Navigation with NavHost and NavController.
+ * Uses bottom navigation with Scaffold to manage tabs.
  */
 actual class AppCoordinator actual constructor() {
-    private var navController: NavHostController? by mutableStateOf(null)
+    private val browseCoordinator = BrowseCoordinator()
+    private val downloadsCoordinator = DownloadsCoordinator()
 
     /**
-     * Composable content that renders the navigation host.
-     * Embed this in your App composable.
+     * Composable content that renders the tab bar interface with bottom navigation.
      */
     @Composable
     actual fun Content() {
-        val controller = rememberNavController()
-        navController = controller
+        var selectedTab by remember { mutableIntStateOf(0) }
 
-        NavHost(
-            navController = controller,
-            startDestination = HomeRoute
-        ) {
-            composable<HomeRoute> {
-                HomeScreen(
-                    onShowClick = { show -> navigateToShowDetail(show) },
-                    onDownloadsClick = { navigateToDownloads() }
-                )
+        Scaffold(
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Filled.Home, contentDescription = "Browse") },
+                        label = { Text("Browse") },
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Downloads") },
+                        label = { Text("Downloads") },
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 }
+                    )
+                }
             }
-            composable<DownloadsRoute> {
-                DownloadsListScreen(
-                    onBack = { navigateBack() }
-                )
-            }
-            composable<ShowDetailRoute> { backStackEntry ->
-                val route: ShowDetailRoute = backStackEntry.toRoute()
-
-                ShowDetailScreen(
-                    showId = route.id,
-                    onBack = { navigateBack() }
-                )
+        ) { paddingValues ->
+            when (selectedTab) {
+                0 -> {
+                    Box(
+                        modifier = Modifier.padding(paddingValues)
+                    ) {
+                        browseCoordinator.Content()
+                    }
+                }
+                1 -> {
+                    Box(
+                        modifier = Modifier.padding(paddingValues)
+                    ) {
+                        downloadsCoordinator.Content()
+                    }
+                }
             }
         }
-    }
-
-    actual fun navigateToShowDetail(show: Show) {
-        navController?.navigate(show.toRoute())
-    }
-
-    actual fun navigateToDownloads() {
-        navController?.navigate(DownloadsRoute)
-    }
-
-    actual fun navigateBack() {
-        navController?.popBackStack()
     }
 }
