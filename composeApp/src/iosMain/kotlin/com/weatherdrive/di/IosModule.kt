@@ -2,7 +2,6 @@ package com.weatherdrive.di
 
 import com.weatherdrive.database.DatabaseDriverFactory
 import com.weatherdrive.download.DownloadManager
-import com.weatherdrive.model.Show
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.player.PlayerService
 import com.weatherdrive.viewmodel.DownloadsListViewModel
@@ -22,11 +21,13 @@ val iosModule = module {
     single { PlayerService(get()) }
     single { PlayerViewModel(get()) }
     
-    viewModel { (show: Show) ->
+    viewModel { (showId: Long) ->
         ShowDetailViewModel(
-            show = show,
+            showId = showId,
+            repository = get(),
             playerService = get(),
-            downloadManager = get()
+            downloadManager = get(),
+            favouriteDatabase = get()
         )
     }
     

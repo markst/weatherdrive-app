@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -77,7 +80,7 @@ fun HomeScreen(
                         )
                     }
                 } else {
-                    ExpandableTree(state.treeNodes, onShowClick)
+                    ExpandableTree(state.treeNodes, state.favouriteIds, onShowClick)
                 }
             }
         }
@@ -85,16 +88,16 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ExpandableTree(treeNodes: List<YearNode>, onShowClick: (Show) -> Unit) {
+private fun ExpandableTree(treeNodes: List<YearNode>, favouriteIds: Set<Long>, onShowClick: (Show) -> Unit) {
     LazyColumn {
         items(treeNodes) { yearNode ->
-            YearRow(yearNode, onShowClick)
+            YearRow(yearNode, favouriteIds, onShowClick)
         }
     }
 }
 
 @Composable
-private fun YearRow(yearNode: YearNode, onShowClick: (Show) -> Unit) {
+private fun YearRow(yearNode: YearNode, favouriteIds: Set<Long>, onShowClick: (Show) -> Unit) {
     var expanded by remember { mutableStateOf(true) }
 
     Column {
@@ -114,14 +117,14 @@ private fun YearRow(yearNode: YearNode, onShowClick: (Show) -> Unit) {
 
         if (expanded) {
             yearNode.children.forEach { categoryNode ->
-                CategoryRow(categoryNode, onShowClick)
+                CategoryRow(categoryNode, favouriteIds, onShowClick)
             }
         }
     }
 }
 
 @Composable
-private fun CategoryRow(categoryNode: CategoryNode, onShowClick: (Show) -> Unit) {
+private fun CategoryRow(categoryNode: CategoryNode, favouriteIds: Set<Long>, onShowClick: (Show) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
 
     Column {
@@ -141,14 +144,14 @@ private fun CategoryRow(categoryNode: CategoryNode, onShowClick: (Show) -> Unit)
 
         if (expanded) {
             categoryNode.children.forEach { show ->
-                ShowRow(show, onShowClick)
+                ShowRow(show, isFavourite = show.id in favouriteIds, onShowClick)
             }
         }
     }
 }
 
 @Composable
-private fun ShowRow(show: Show, onShowClick: (Show) -> Unit) {
+private fun ShowRow(show: Show, isFavourite: Boolean, onShowClick: (Show) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -168,8 +171,19 @@ private fun ShowRow(show: Show, onShowClick: (Show) -> Unit) {
         }
         Text(
             text = show.title,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
         )
+        if (isFavourite) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = "Favourite",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(16.dp)
+            )
+        }
     }
     HorizontalDivider(modifier = Modifier.padding(start = 48.dp))
 }

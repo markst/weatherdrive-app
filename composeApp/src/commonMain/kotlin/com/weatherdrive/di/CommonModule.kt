@@ -1,7 +1,9 @@
 package com.weatherdrive.di
 
+import app.cash.sqldelight.db.SqlDriver
 import com.weatherdrive.database.DatabaseDriverFactory
 import com.weatherdrive.database.DownloadDatabase
+import com.weatherdrive.database.FavouriteDatabase
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.repository.ShowRepository
 import com.weatherdrive.viewmodel.HomeViewModel
@@ -14,6 +16,8 @@ import org.koin.dsl.module
 val commonModule = module {
     single { WeatherdriveApi() }
     single { ShowRepository(get()) }
-    single { DownloadDatabase(get<DatabaseDriverFactory>().createDriver()) }
-    viewModel { HomeViewModel(get()) }
+    single<SqlDriver> { get<DatabaseDriverFactory>().createDriver() }
+    single { DownloadDatabase(get()) }
+    single { FavouriteDatabase(get()) }
+    viewModel { HomeViewModel(get(), get()) }
 }

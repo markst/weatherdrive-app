@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS FavouriteShow (
+    showId INTEGER NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL
+);
+
+insertFavouriteShow:
+INSERT OR REPLACE INTO FavouriteShow (showId, title)
+VALUES (:showId, :title);
+
+deleteFavouriteShow:
+DELETE FROM FavouriteShow WHERE showId = :showId;
+
+getAllFavouriteShows:
+SELECT showId FROM FavouriteShow;
+
+isFavouriteShow:
+SELECT COUNT(*) FROM FavouriteShow WHERE showId = :showId;
