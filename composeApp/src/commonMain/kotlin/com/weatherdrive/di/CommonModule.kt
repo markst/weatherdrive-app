@@ -19,5 +19,5 @@ val commonModule = module {
     single<SqlDriver> { get<DatabaseDriverFactory>().createDriver() }
     single { DownloadDatabase(get()) }
     single { FavouriteDatabase(get()) }
-    viewModel { HomeViewModel(get(), get()) }
+    viewModel { HomeViewModel(get()) }
 }

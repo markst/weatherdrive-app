@@ -2,7 +2,6 @@ package com.weatherdrive.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.weatherdrive.database.FavouriteDatabase
 import com.weatherdrive.model.CategoryNode
 import com.weatherdrive.model.Show
 import com.weatherdrive.model.YearNode
@@ -17,14 +16,11 @@ import kotlinx.coroutines.launch
 
 sealed class UiState {
     data object Loading : UiState()
-    data class Success(val treeNodes: List<YearNode>, val favouriteIds: Set<Long> = emptySet()) : UiState()
+    data class Success(val treeNodes: List<YearNode>) : UiState()
     data class Error(val message: String) : UiState()
 }
 
-class HomeViewModel(
-    private val repository: ShowRepository,
-    private val favouriteDatabase: FavouriteDatabase
-) : ViewModel() {
+class HomeViewModel(private val repository: ShowRepository) : ViewModel() {
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1).also {
         it.tryEmit(Unit)
     }
@@ -35,8 +31,7 @@ class HomeViewModel(
                 emit(UiState.Loading)
                 try {
                     val shows = repository.fetchShows()
-                    val favouriteIds = favouriteDatabase.getAll()
-                    emit(UiState.Success(buildTree(shows), favouriteIds))
+                    emit(UiState.Success(buildTree(shows)))
                 } catch (e: Exception) {
                     emit(UiState.Error(e.message ?: "Unknown error"))
                 }
