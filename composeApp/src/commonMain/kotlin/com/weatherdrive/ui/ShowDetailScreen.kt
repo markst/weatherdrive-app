@@ -235,6 +235,22 @@ fun ShowDetailScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
+
+            if (currentShow.tracklisting.isNotBlank()) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Tracklisting",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = currentShow.tracklisting,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
