@@ -36,6 +36,8 @@ actual class BrowseCoordinator(
         val homeVC = ComposeUIViewController {
             HomeScreen(
                 onShowClick = { show -> navigateToShowDetail(show) },
+                // UINavigationController provides its own native navigation bar, so the
+                // Compose TopAppBar is not needed on iOS.
                 showTopBar = false
             )
         }
@@ -51,6 +53,8 @@ actual class BrowseCoordinator(
         return ComposeUIViewController {
             HomeScreen(
                 onShowClick = { show -> navigateToShowDetail(show) },
+                // UINavigationController provides its own native navigation bar, so the
+                // Compose TopAppBar is not needed on iOS.
                 showTopBar = false
             )
         }
@@ -79,6 +83,8 @@ actual class BrowseCoordinator(
             ShowDetailScreen(
                 showId = show.id,
                 onBack = { navigateBack() },
+                // UINavigationController provides its own native navigation bar, so the
+                // Compose TopAppBar is not needed on iOS.
                 showTopBar = false
             )
         }
