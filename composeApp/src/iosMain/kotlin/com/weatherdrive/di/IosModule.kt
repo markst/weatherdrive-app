@@ -7,7 +7,6 @@ import com.weatherdrive.player.PlayerService
 import com.weatherdrive.viewmodel.DownloadsListViewModel
 import com.weatherdrive.viewmodel.PlayerViewModel
 import com.weatherdrive.viewmodel.ShowDetailViewModel
-import dev.markturnip.radioplayer.PlatformMediaPlayer
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -17,8 +16,7 @@ import org.koin.dsl.module
 val iosModule = module {
     single { DatabaseDriverFactory() }
     single { DownloadManager(get<WeatherdriveApi>(), get()) }
-    single { PlatformMediaPlayer() }
-    single { PlayerService(get()) }
+    single { PlayerService() }
     single { PlayerViewModel(get()) }
     
     viewModel { (showId: Long) ->

@@ -3,17 +3,14 @@ package com.weatherdrive
 import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.di.commonModule
 import com.weatherdrive.di.iosModule
-import org.koin.core.context.GlobalContext.getKoinApplicationOrNull
 import org.koin.core.context.startKoin
 
 /**
  * Initialize Koin for iOS. Call this before using any Koin-injected dependencies.
  */
 fun initKoin() {
-    if (getKoinApplicationOrNull() == null) {
-        startKoin {
-            modules(commonModule, iosModule)
-        }
+    startKoin {
+        modules(commonModule, iosModule)
     }
 }
 
