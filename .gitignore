@@ -1,8 +1,8 @@
 .gradle/
 .kotlin/
 .idea/
+.DS_Store
 *.iml
 build/
 local.properties
-.DS_Store
-ios/Weatherdrive.xcodeproj/project.xcworkspace/xcuserdata
+xcuserdata
