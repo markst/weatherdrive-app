@@ -24,7 +24,7 @@ data class PlaybackUiState(
  * Can be shared across multiple view models for audio playback.
  */
 class PlayerService(
-    private val mediaPlayer: PlatformMediaPlayer
+    private val mediaPlayer: PlatformMediaPlayer = PlatformMediaPlayer()
 ) {
     private val _playbackState = MutableStateFlow(PlaybackUiState())
     val playbackState: StateFlow<PlaybackUiState> = _playbackState.asStateFlow()

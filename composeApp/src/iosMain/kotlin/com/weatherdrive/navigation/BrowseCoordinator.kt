@@ -8,7 +8,6 @@ import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UINavigationController
-import platform.UIKit.UITabBarItem
 import platform.UIKit.UIViewController
 
 /**
@@ -40,11 +39,6 @@ actual class BrowseCoordinator(
             )
         }
         navigationController.setViewControllers(listOf(homeVC), animated = false)
-        navigationController.tabBarItem = UITabBarItem(
-            title = "Browse",
-            image = null,
-            tag = 0
-        )
     }
 
     /**
