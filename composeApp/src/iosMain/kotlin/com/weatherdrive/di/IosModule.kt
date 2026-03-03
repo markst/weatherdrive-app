@@ -18,13 +18,14 @@ val iosModule = module {
     single { DownloadManager(get<WeatherdriveApi>(), get()) }
     single { PlayerService() }
     single { PlayerViewModel(get()) }
-
+    
     viewModel { (showId: Long) ->
         ShowDetailViewModel(
             showId = showId,
             repository = get(),
             playerService = get(),
-            downloadManager = get()
+            downloadManager = get(),
+            favouriteDatabase = get()
         )
     }
     

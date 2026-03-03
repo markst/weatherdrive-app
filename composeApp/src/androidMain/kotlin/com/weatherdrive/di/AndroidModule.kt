@@ -25,7 +25,8 @@ val androidModule = module {
             showId = showId,
             repository = get(),
             playerService = get(),
-            downloadManager = get()
+            downloadManager = get(),
+            favouriteDatabase = get()
         )
     }
     

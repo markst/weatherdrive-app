@@ -2,6 +2,7 @@ package com.weatherdrive.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.weatherdrive.database.FavouriteDatabase
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.model.ShowItem
@@ -20,7 +21,8 @@ class ShowDetailViewModel(
     private val showId: Long,
     private val repository: ShowRepository,
     private val playerService: PlayerService,
-    val downloadManager: DownloadManager
+    val downloadManager: DownloadManager,
+    private val favouriteDatabase: FavouriteDatabase
 ) : ViewModel() {
     private val _show = MutableStateFlow<ShowItem?>(null)
     val show: StateFlow<ShowItem?> = _show.asStateFlow()
@@ -29,6 +31,9 @@ class ShowDetailViewModel(
     private var fileItemIndex: Map<String, FileItem> = emptyMap()
 
     val playbackState: StateFlow<PlaybackUiState> = playerService.playbackState
+
+    private val _isFavourite = MutableStateFlow(false)
+    val isFavourite: StateFlow<Boolean> = _isFavourite.asStateFlow()
 
     init {
         loadShow()
@@ -39,6 +44,23 @@ class ShowDetailViewModel(
             val show = repository.getShowById(showId)
             fileItemIndex = show?.filelist?.associateBy { it.googleDriveId } ?: emptyMap()
             _show.value = show?.let { ShowItem.from(it) }
+            _isFavourite.value = favouriteDatabase.isFavourite(showId)
+        }
+    }
+
+    /**
+     * Toggle the favourite state of the current show.
+     */
+    fun toggleFavourite() {
+        val currentShow = _show.value ?: return
+        viewModelScope.launch {
+            if (_isFavourite.value) {
+                favouriteDatabase.delete(showId)
+                _isFavourite.value = false
+            } else {
+                favouriteDatabase.insert(showId, currentShow.title)
+                _isFavourite.value = true
+            }
         }
     }
 
