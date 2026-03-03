@@ -31,7 +31,7 @@ actual class DownloadsCoordinator(
 
     private fun setupNavigationController() {
         val downloadsVC = ComposeUIViewController {
-            DownloadsListScreen()
+            DownloadsListScreen(showTopBar = false)
         }
         navigationController.setViewControllers(listOf(downloadsVC), animated = false)
     }

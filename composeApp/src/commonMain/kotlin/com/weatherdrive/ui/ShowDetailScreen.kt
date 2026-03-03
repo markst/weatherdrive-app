@@ -96,7 +96,8 @@ private fun DownloadProgressState?.toDownloadStatus(): DownloadStatus {
 @Composable
 fun ShowDetailScreen(
     showId: Long,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    showTopBar: Boolean = true
 ) {
     val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(showId) }
     val show by viewModel.show.collectAsState()
@@ -105,17 +106,19 @@ fun ShowDetailScreen(
     if (show == null) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("Loading...") },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
+                if (showTopBar) {
+                    TopAppBar(
+                        title = { Text("Loading...") },
+                        navigationIcon = {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             Box(
@@ -157,26 +160,28 @@ fun ShowDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(currentShow.title) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+            if (showTopBar) {
+                TopAppBar(
+                    title = { Text(currentShow.title) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.toggleFavourite() }) {
+                            Icon(
+                                imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = if (isFavourite) "Remove from favourites" else "Add to favourites",
+                                tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.toggleFavourite() }) {
-                        Icon(
-                            imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = if (isFavourite) "Remove from favourites" else "Add to favourites",
-                            tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
+                )
+            }
         }
     ) { paddingValues ->
         LazyColumn(
