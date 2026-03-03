@@ -6,13 +6,30 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0A4C298650BAF736D5EE4EF6 /* _internal_linkage_SwiftPMImport in Frameworks */ = {isa = PBXBuildFile; productRef = 252229A468CE1F313D93D4AD /* _internal_linkage_SwiftPMImport */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		5E5651B32F55B2A10092CC04 /* Weatherdrive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Weatherdrive.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		6EFEBC132F566A2500E4D413 /* Exceptions for "Weatherdrive" folder in "Weatherdrive" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5E5651B22F55B2A10092CC04 /* Weatherdrive */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5E5651B52F55B2A10092CC04 /* Weatherdrive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6EFEBC132F566A2500E4D413 /* Exceptions for "Weatherdrive" folder in "Weatherdrive" target */,
+			);
 			path = Weatherdrive;
 			sourceTree = "<group>";
 		};
@@ -23,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A4C298650BAF736D5EE4EF6 /* _internal_linkage_SwiftPMImport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,6 +84,7 @@
 			);
 			name = Weatherdrive;
 			packageProductDependencies = (
+				252229A468CE1F313D93D4AD /* _internal_linkage_SwiftPMImport */,
 			);
 			productName = Weatherdrive;
 			productReference = 5E5651B32F55B2A10092CC04 /* Weatherdrive.app */;
@@ -95,6 +114,9 @@
 			);
 			mainGroup = 5E5651AA2F55B2A10092CC04;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				851D5516E597D722AECDAFF9 /* XCLocalSwiftPackageReference "_internal_linkage_SwiftPMImport" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5E5651B42F55B2A10092CC04 /* Products */;
 			projectDirPath = "";
@@ -274,8 +296,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_FILE = Weatherdrive/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
@@ -284,7 +305,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -318,8 +339,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_FILE = Weatherdrive/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
@@ -328,7 +348,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -372,6 +392,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		851D5516E597D722AECDAFF9 /* XCLocalSwiftPackageReference "_internal_linkage_SwiftPMImport" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = _internal_linkage_SwiftPMImport;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		252229A468CE1F313D93D4AD /* _internal_linkage_SwiftPMImport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = _internal_linkage_SwiftPMImport;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5E5651AB2F55B2A10092CC04 /* Project object */;
 }
