@@ -42,15 +42,18 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel<HomeViewModel>(),
-    onShowClick: (Show) -> Unit = {}
+    onShowClick: (Show) -> Unit = {},
+    showTopBar: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("WeatherDrive") }
-            )
+            if (showTopBar) {
+                TopAppBar(
+                    title = { Text("WeatherDrive") }
+                )
+            }
         }
     ) { paddingValues ->
         Surface(

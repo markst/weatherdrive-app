@@ -31,7 +31,9 @@ actual class DownloadsCoordinator(
 
     private fun setupNavigationController() {
         val downloadsVC = ComposeUIViewController {
-            DownloadsListScreen()
+            // UINavigationController provides its own native navigation bar, so the
+            // Compose TopAppBar is not needed on iOS.
+            DownloadsListScreen(showTopBar = false)
         }
         navigationController.setViewControllers(listOf(downloadsVC), animated = false)
     }

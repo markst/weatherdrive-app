@@ -48,7 +48,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun DownloadsListScreen(
     viewModel: DownloadsListViewModel = koinViewModel<DownloadsListViewModel>(),
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    showTopBar: Boolean = true
 ) {
     val downloads by viewModel.downloads.collectAsState()
     val completedDownloads = downloads.values.filter { 
@@ -59,21 +60,23 @@ fun DownloadsListScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Downloads") },
-                navigationIcon = if (onBack != null) {
-                    {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
+            if (showTopBar) {
+                TopAppBar(
+                    title = { Text("Downloads") },
+                    navigationIcon = if (onBack != null) {
+                        {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
                         }
+                    } else {
+                        {}
                     }
-                } else {
-                    {}
-                }
-            )
+                )
+            }
         }
     ) { paddingValues ->
         if (completedDownloads.isEmpty()) {
