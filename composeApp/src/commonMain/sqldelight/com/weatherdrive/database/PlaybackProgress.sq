@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS PlaybackProgress (
+    googleDriveId TEXT NOT NULL PRIMARY KEY,
+    positionSeconds REAL NOT NULL
+);
+
+upsertPlaybackProgress:
+INSERT OR REPLACE INTO PlaybackProgress (googleDriveId, positionSeconds)
+VALUES (:googleDriveId, :positionSeconds);
+
+getPlaybackProgress:
+SELECT positionSeconds FROM PlaybackProgress WHERE googleDriveId = :googleDriveId;
+
+deletePlaybackProgress:
+DELETE FROM PlaybackProgress WHERE googleDriveId = :googleDriveId;
