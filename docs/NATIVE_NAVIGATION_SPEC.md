@@ -186,6 +186,10 @@ This keeps screens fully reusable across platforms while allowing each platform 
 The iOS `AppCoordinator` owns a `UITabBarController` and creates child coordinators for each tab:
 
 ```kotlin
+// The primary constructor accepts a UITabBarController parameter, allowing callers
+// (e.g. the Swift SceneDelegate) to pass in a pre-configured instance. The no-arg
+// secondary constructor creates a default UITabBarController for convenience and to
+// satisfy the expect/actual no-arg constructor requirement.
 actual class AppCoordinator(
     private val tabBarController: UITabBarController
 ) {
@@ -394,6 +398,11 @@ The Android browse coordinator uses Jetpack Compose Navigation with type-safe ro
 
 ```kotlin
 actual class BrowseCoordinator actual constructor() {
+    // The NavController is nullable because it can only be created inside a @Composable
+    // scope (via rememberNavController). It is stored with mutableStateOf so that
+    // non-composable methods like navigateToShowDetail() can access it after Content()
+    // has composed. The delegate is Compose-observable, which is safe but not required here
+    // — the key reason is to hold a reference that is set during composition.
     private var navController: NavHostController? by mutableStateOf(null)
 
     @Composable
@@ -565,7 +574,7 @@ The `AppCoordinator` owns a `UITabBarController` and assembles the child coordin
 
 ### Step 4: Implement Android Coordinators with Your Preferred Library
 
-In `androidMain`, implement using Jetpack Navigation, Voyager, or any other approach:
+In `androidMain`, implement using Jetpack Navigation, Voyager, or any other approach. Note: the `NavController` is nullable and stored via `mutableStateOf` because it can only be created inside a `@Composable` scope (via `rememberNavController`), but must be accessible from non-composable coordinator methods like `navigateToDetail()`:
 
 ```kotlin
 // androidMain
