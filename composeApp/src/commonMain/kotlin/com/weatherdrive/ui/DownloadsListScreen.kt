@@ -1,8 +1,6 @@
 package com.weatherdrive.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,15 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.weatherdrive.download.DownloadProgress
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.viewmodel.DownloadsListViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -52,6 +55,7 @@ fun DownloadsListScreen(
     showTopBar: Boolean = true
 ) {
     val downloads by viewModel.downloads.collectAsState()
+    val playbackState by viewModel.playbackState.collectAsState()
     val completedDownloads = downloads.values.filter { 
         it.state == DownloadProgressState.Completed 
     }
@@ -104,9 +108,17 @@ fun DownloadsListScreen(
                     items = completedDownloads,
                     key = { it.fileItem.googleDriveId }
                 ) { downloadProgress ->
+                    val fileId = downloadProgress.fileItem.googleDriveId
                     DownloadItemCard(
                         downloadProgress = downloadProgress,
-                        onPlayClick = { viewModel.playFile(downloadProgress.fileItem) },
+                        playbackState = playbackState,
+                        onPlayPauseClick = {
+                            if (playbackState.currentFileId == fileId) {
+                                viewModel.togglePlayPause()
+                            } else {
+                                viewModel.playFile(downloadProgress.fileItem)
+                            }
+                        },
                         onDeleteClick = { itemToDelete = downloadProgress.fileItem }
                     )
                 }
@@ -144,15 +156,14 @@ fun DownloadsListScreen(
 @Composable
 private fun DownloadItemCard(
     downloadProgress: DownloadProgress,
-    onPlayClick: () -> Unit,
+    playbackState: PlaybackUiState,
+    onPlayPauseClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     val fileItem = downloadProgress.fileItem
     
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onPlayClick, role = Role.Button),
+        modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -162,6 +173,14 @@ private fun DownloadItemCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            PlayPauseProgressButton(
+                fileId = fileItem.googleDriveId,
+                playbackState = playbackState,
+                onClick = onPlayPauseClick
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = fileItem.title,
@@ -184,6 +203,41 @@ private fun DownloadItemCard(
                     tint = MaterialTheme.colorScheme.error
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PlayPauseProgressButton(
+    fileId: String,
+    playbackState: PlaybackUiState,
+    onClick: () -> Unit
+) {
+    val isCurrentItem = playbackState.currentFileId == fileId
+    val isPlaying = isCurrentItem && playbackState.isPlaying
+    val progress = if (isCurrentItem) playbackState.progress else null
+    val progressFraction = if (progress != null && progress.duration > 0) {
+        (progress.elapsed / progress.duration).toFloat().coerceIn(0f, 1f)
+    } else null
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(48.dp)
+    ) {
+        if (progressFraction != null) {
+            CircularProgressIndicator(
+                progress = { progressFraction },
+                modifier = Modifier.size(40.dp),
+                strokeWidth = 3.dp,
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        }
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pause" else "Play"
+            )
         }
     }
 }

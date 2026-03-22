@@ -8,7 +8,6 @@ import dev.markturnip.radioplayer.Progress
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.datetime.Clock
 
 /**
  * UI state for the currently playing item.
@@ -37,8 +36,6 @@ class PlayerService(
     private val _playbackState = MutableStateFlow(PlaybackUiState())
     val playbackState: StateFlow<PlaybackUiState> = _playbackState.asStateFlow()
 
-    private var lastPersistedTime: Long = 0L
-
     init {
         mediaPlayer.subscribeState { state ->
             _playbackState.value = _playbackState.value.copy(
@@ -56,11 +53,13 @@ class PlayerService(
         mediaPlayer.subscribeProgress { progress ->
             _playbackState.value = _playbackState.value.copy(progress = progress)
             val currentFileId = _playbackState.value.currentFileId ?: return@subscribeProgress
-            val now = Clock.System.now().toEpochMilliseconds()
-            if (now - lastPersistedTime >= persistIntervalSeconds * 1000L) {
-                lastPersistedTime = now
-                database.saveProgress(currentFileId, progress.elapsed)
-            }
+            persistProgressIfNeeded(currentFileId, progress)
+        }
+    }
+
+    private fun persistProgressIfNeeded(fileId: String, progress: Progress) {
+        if (progress.elapsed > 0 && progress.elapsed.toLong() % persistIntervalSeconds == 0L) {
+            database.saveProgress(fileId, progress.elapsed)
         }
     }
     
