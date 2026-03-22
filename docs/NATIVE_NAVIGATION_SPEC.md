@@ -6,7 +6,7 @@ This specification describes a navigation architecture for **Compose Multiplatfo
 
 On **iOS**, this means using `UITabBarController` and `UINavigationController` directly — giving users the familiar iOS tab bar, native push/pop animations, swipe-back gestures, and large-title navigation bars. On **Android**, it means using Jetpack Compose Navigation (`NavHost`/`NavController`) or any other Android navigation library, all within a standard `Scaffold` bottom navigation layout.
 
-The result is an app that **feels native on both platforms** — with native navigation chrome, native animations, and native gestures — while sharing 100% of the screen-level UI code.
+The result is an app that **feels native on both platforms** — with native navigation chrome (the platform-provided UI surrounding your content, such as tab bars, navigation bars, back buttons, and titles), native animations, and native gestures — while sharing 100% of the screen-level UI code.
 
 ---
 
@@ -343,6 +343,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 ```
 
 This gives iOS full native ownership of the window's root view controller hierarchy — the `UITabBarController` is a real UIKit controller, not a Compose simulation.
+
+**Why SceneDelegate instead of a SwiftUI wrapper?**
+
+You might consider wrapping the coordinator's `UITabBarController` in a SwiftUI `App` using `UIViewControllerRepresentable`. However, SwiftUI's own view hierarchy is backed by UIKit under the hood — a SwiftUI `NavigationStack` or `TabView` ultimately creates `UINavigationController` and `UITabBarController` instances internally. Wrapping our UIKit controllers in `UIViewControllerRepresentable` just to embed them inside SwiftUI would add an unnecessary layer of indirection for no benefit. Since we already have native UIKit controllers, the most direct approach is to set the `UITabBarController` as the window's `rootViewController` in the `SceneDelegate`. This avoids the extra SwiftUI ↔ UIKit bridging and keeps the view controller hierarchy as simple as possible.
 
 ---
 
