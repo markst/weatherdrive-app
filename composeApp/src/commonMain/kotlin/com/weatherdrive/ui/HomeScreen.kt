@@ -24,7 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,7 +87,7 @@ fun HomeScreen(
 @Composable
 private fun ExpandableTree(treeNodes: List<YearNode>, onShowClick: (Show) -> Unit) {
     LazyColumn {
-        items(treeNodes) { yearNode ->
+        items(treeNodes, key = { it.year }) { yearNode ->
             YearRow(yearNode, onShowClick)
         }
     }
@@ -95,7 +95,7 @@ private fun ExpandableTree(treeNodes: List<YearNode>, onShowClick: (Show) -> Uni
 
 @Composable
 private fun YearRow(yearNode: YearNode, onShowClick: (Show) -> Unit) {
-    var expanded by remember { mutableStateOf(true) }
+    var expanded by rememberSaveable { mutableStateOf(true) }
 
     Column {
         Row(
@@ -122,7 +122,7 @@ private fun YearRow(yearNode: YearNode, onShowClick: (Show) -> Unit) {
 
 @Composable
 private fun CategoryRow(categoryNode: CategoryNode, onShowClick: (Show) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
     Column {
         Row(
