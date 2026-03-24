@@ -5,6 +5,7 @@ import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.download.DownloadProgress
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.player.PlayerService
 import kotlinx.coroutines.flow.StateFlow
 
@@ -20,6 +21,11 @@ class DownloadsListViewModel(
      * StateFlow of all downloads tracked by the DownloadManager.
      */
     val downloads: StateFlow<Map<String, DownloadProgress>> = downloadManager.downloads
+
+    /**
+     * The current playback state exposed for UI to show play/pause/progress per item.
+     */
+    val playbackState: StateFlow<PlaybackUiState> = playerService.playbackState
     
     /**
      * Returns a list of completed downloads from the current state.
@@ -51,5 +57,12 @@ class DownloadsListViewModel(
             artworkUrl = null
         )
         playerService.playItem(mediaItem)
+    }
+
+    /**
+     * Toggle play/pause for the currently active item.
+     */
+    fun togglePlayPause() {
+        playerService.togglePlayPause()
     }
 }

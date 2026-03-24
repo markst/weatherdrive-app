@@ -17,7 +17,7 @@ import org.koin.dsl.module
 val androidModule = module {
     single { DatabaseDriverFactory(androidContext()) }
     single { DownloadManager(get<WeatherdriveApi>(), get()) }
-    single { PlayerService() }
+    single { PlayerService(database = get()) }
     single { PlayerViewModel(get()) }
     
     viewModel { (showId: Long) ->

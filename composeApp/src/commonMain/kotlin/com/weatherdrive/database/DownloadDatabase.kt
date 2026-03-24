@@ -35,4 +35,17 @@ class DownloadDatabase(driver: SqlDriver) {
             )
         }
     }
+
+    fun saveProgress(googleDriveId: String, positionSeconds: Double) {
+        db.playbackProgressQueries.upsertPlaybackProgress(googleDriveId, positionSeconds)
+    }
+
+    fun getProgress(googleDriveId: String): Double? {
+        return db.playbackProgressQueries.getPlaybackProgress(googleDriveId)
+            .executeAsOneOrNull()
+    }
+
+    fun clearProgress(googleDriveId: String) {
+        db.playbackProgressQueries.deletePlaybackProgress(googleDriveId)
+    }
 }

@@ -16,7 +16,7 @@ import org.koin.dsl.module
 val iosModule = module {
     single { DatabaseDriverFactory() }
     single { DownloadManager(get<WeatherdriveApi>(), get()) }
-    single { PlayerService() }
+    single { PlayerService(database = get()) }
     single { PlayerViewModel(get()) }
     
     viewModel { (showId: Long) ->

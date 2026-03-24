@@ -1,5 +1,6 @@
 package com.weatherdrive.player
 
+import com.weatherdrive.database.DownloadDatabase
 import dev.markturnip.radioplayer.MediaPlayerItem
 import dev.markturnip.radioplayer.PlaybackState
 import dev.markturnip.radioplayer.PlatformMediaPlayer
@@ -22,13 +23,19 @@ data class PlaybackUiState(
 /**
  * Intermediary player service that owns the PlatformMediaPlayer and manages subscriptions.
  * Can be shared across multiple view models for audio playback.
+ *
+ * @param mediaPlayer The underlying platform media player.
+ * @param database The database used to persist playback progress.
+ * @param persistIntervalSeconds How often (in seconds) progress is written to the database.
  */
 class PlayerService(
-    private val mediaPlayer: PlatformMediaPlayer = PlatformMediaPlayer()
+    private val mediaPlayer: PlatformMediaPlayer = PlatformMediaPlayer(),
+    private val database: DownloadDatabase,
+    private val persistIntervalSeconds: Int = 10
 ) {
     private val _playbackState = MutableStateFlow(PlaybackUiState())
     val playbackState: StateFlow<PlaybackUiState> = _playbackState.asStateFlow()
-    
+
     init {
         mediaPlayer.subscribeState { state ->
             _playbackState.value = _playbackState.value.copy(
@@ -39,11 +46,19 @@ class PlayerService(
         
         mediaPlayer.subscribeProgress { progress ->
             _playbackState.value = _playbackState.value.copy(progress = progress)
+            val currentFileId = _playbackState.value.currentFileId ?: return@subscribeProgress
+            persistProgressIfNeeded(currentFileId, progress)
+        }
+    }
+
+    private fun persistProgressIfNeeded(fileId: String, progress: Progress) {
+        if (progress.elapsed > 0 && progress.elapsed.toLong() % persistIntervalSeconds == 0L) {
+            database.saveProgress(fileId, progress.elapsed)
         }
     }
     
     /**
-     * Play a media item.
+     * Play a media item, resuming from a previously saved position if available.
      */
     fun playItem(mediaItem: MediaPlayerItem) {
         _playbackState.value = _playbackState.value.copy(
@@ -51,6 +66,10 @@ class PlayerService(
             currentTitle = mediaItem.title
         )
         mediaPlayer.playItem(mediaItem)
+        val savedPosition = database.getProgress(mediaItem.id)
+        if (savedPosition != null && savedPosition > 0.0) {
+            mediaPlayer.seekWithPosition(savedPosition)
+        }
     }
     
     /**
