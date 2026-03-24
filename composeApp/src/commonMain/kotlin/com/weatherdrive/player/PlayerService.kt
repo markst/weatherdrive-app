@@ -42,12 +42,6 @@ class PlayerService(
                 playbackState = state,
                 isPlaying = state == PlaybackState.PLAYING
             )
-            if (state == PlaybackState.STOPPED || state == PlaybackState.COMPLETED) {
-                val currentFileId = _playbackState.value.currentFileId
-                if (currentFileId != null) {
-                    database.clearProgress(currentFileId)
-                }
-            }
         }
         
         mediaPlayer.subscribeProgress { progress ->
