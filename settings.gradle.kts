@@ -30,5 +30,5 @@ dependencyResolutionManagement {
 rootProject.name = "weatherdrive-app"
 include(":composeApp")
 
-includeBuild("radioplayer-kt")
-includeBuild("expandable-player-kt")
+includeBuild("submodules/radioplayer-kt")
+includeBuild("submodules/expandable-player-kt")

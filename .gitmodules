@@ -1,6 +1,6 @@
 [submodule "radioplayer-kt"]
-	path = radioplayer-kt
+	path = submodules/radioplayer-kt
 	url = https://github.com/markst/radioplayer-kt.git
 [submodule "expandable-player-kt"]
-	path = expandable-player-kt
+	path = submodules/expandable-player-kt
 	url = https://github.com/markst/expandable-player-kt.git
