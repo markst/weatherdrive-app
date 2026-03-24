@@ -1,6 +1,8 @@
 package com.weatherdrive.util
 
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.ShowItem
+import kotlin.math.roundToInt
 
 /**
  * Formats file information combining size and duration.
@@ -18,9 +20,9 @@ fun Int.formatDuration(): String {
     val minutes = (this % 3600) / 60
     val secs = this % 60
     return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, secs)
+        "$hours:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}"
     } else {
-        String.format("%d:%02d", minutes, secs)
+        "$minutes:${secs.toString().padStart(2, '0')}"
     }
 }
 
@@ -34,8 +36,8 @@ fun Double.formatDuration(): String = this.toInt().formatDuration()
  */
 fun Long.formatSpeed(): String {
     return when {
-        this >= 1_000_000 -> String.format("%.1f MB/s", this / 1_000_000.0)
-        this >= 1_000 -> String.format("%.1f KB/s", this / 1_000.0)
+        this >= 1_000_000 -> "${(this / 1_000_000.0).toOneDecimalString()} MB/s"
+        this >= 1_000 -> "${(this / 1_000.0).toOneDecimalString()} KB/s"
         else -> "$this B/s"
     }
 }
@@ -47,7 +49,7 @@ fun Double.formatTime(): String {
     val totalSeconds = this.toInt()
     val minutes = totalSeconds / 60
     val secs = totalSeconds % 60
-    return "%d:%02d".format(minutes, secs)
+    return "$minutes:${secs.toString().padStart(2, '0')}"
 }
 
 /**
@@ -55,4 +57,31 @@ fun Double.formatTime(): String {
  */
 fun String.sanitizeForFilename(): String {
     return this.replace(Regex("[^a-zA-Z0-9\\s-]"), "").trim()
+}
+
+/**
+ * Formats an Int representing megabytes into a human-readable file size string
+ * (e.g., "120.5 MB", "500.0 KB").
+ */
+fun Int.formatFileSize(): String {
+    val bytes = this * 1_000_000L
+    return when {
+        bytes >= 1_000_000 -> "${(bytes / 1_000_000.0).toOneDecimalString()} MB"
+        bytes >= 1_000 -> "${(bytes / 1_000.0).toOneDecimalString()} KB"
+        else -> "$bytes B"
+    }
+}
+
+/**
+ * Formats stream information combining file size and duration.
+ */
+fun ShowItem.Stream.formatInfo(): String {
+    val duration = timeInSeconds.formatDuration()
+    return fileSize?.let { "$it • $duration" } ?: duration
+}
+
+private fun Double.toOneDecimalString(): String {
+    val rounded = (this * 10).roundToInt() / 10.0
+    val whole = rounded.toInt()
+    return if (rounded == whole.toDouble()) "$whole.0" else rounded.toString()
 }

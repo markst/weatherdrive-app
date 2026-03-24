@@ -1,6 +1,13 @@
 pluginManagement {
     repositories {
-        google()
+        google {
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google")
+            }
+        }
+        maven("https://packages.jetbrains.team/maven/p/kt/dev")
         mavenCentral()
         gradlePluginPortal()
     }
@@ -8,15 +15,20 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
-        google()
+        google {
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google")
+            }
+        }
+        maven("https://packages.jetbrains.team/maven/p/kt/dev")
         mavenCentral()
-        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
-        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/swift-export-experimental")
     }
 }
 
 rootProject.name = "weatherdrive-app"
 include(":composeApp")
 
-includeBuild("radioplayer-kt")
-includeBuild("expandable-player-kt")
+includeBuild("submodules/radioplayer-kt")
+includeBuild("submodules/expandable-player-kt")

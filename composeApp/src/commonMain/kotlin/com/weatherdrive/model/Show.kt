@@ -2,20 +2,25 @@ package com.weatherdrive.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.LongAsStringSerializer
 
 @Serializable
 data class Show(
     val id: Long,
     @SerialName("title")
     val titles: List<String> = emptyList(),
+    @SerialName("image")
     val thumbnail: String? = null,
-    val year: String = "",
+    val date: ShowDate? = null,
     val category: String = "",
-    val filelist: List<FileItem> = emptyList()
+    val filelist: List<FileItem> = emptyList(),
+    val tracklisting: String = ""
 ) {
     val title: String
         get() = titles.joinToString(", ")
+
+    /** Convenience accessor that returns the year portion of the date. */
+    val year: String
+        get() = date?.year ?: ""
 }
 
 @Serializable
@@ -26,3 +31,4 @@ data class FileItem(
     val timeInSeconds: Int = 0,
     val largerThan100MB: Boolean = false
 )
+

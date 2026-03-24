@@ -6,7 +6,6 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.ui.DownloadsListScreen
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UINavigationController
-import platform.UIKit.UITabBarItem
 
 /**
  * iOS implementation of DownloadsCoordinator.
@@ -32,14 +31,11 @@ actual class DownloadsCoordinator(
 
     private fun setupNavigationController() {
         val downloadsVC = ComposeUIViewController {
-            DownloadsListScreen()
+            // UINavigationController provides its own native navigation bar, so the
+            // Compose TopAppBar is not needed on iOS.
+            DownloadsListScreen(showTopBar = false)
         }
         navigationController.setViewControllers(listOf(downloadsVC), animated = false)
-        navigationController.tabBarItem = UITabBarItem(
-            title = "Downloads",
-            image = null,
-            tag = 1
-        )
     }
 
     /**

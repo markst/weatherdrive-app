@@ -33,8 +33,15 @@ actual class AppCoordinator(
     private fun setupTabs() {
         val browseNav = browseCoordinator.getNavigationController()
         val downloadsNav = downloadsCoordinator.getNavigationController()
-        
+
+        browseNav.setTitle("Browse")
+        downloadsNav.setTitle("Downloads")
+
         tabBarController.setViewControllers(listOf(browseNav, downloadsNav), animated = false)
+        applyBarAppearance(
+            tabBar = tabBarController.tabBar,
+            navigationBars = listOf(browseNav.navigationBar, downloadsNav.navigationBar)
+        )
     }
 
     /**

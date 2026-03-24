@@ -5,14 +5,15 @@ import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.download.DownloadProgress
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.player.PlayerService
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 
 /**
  * ViewModel for the DownloadsListScreen managing the list of completed downloads.
  */
 class DownloadsListViewModel(
-    private val downloadManager: DownloadManager
+    private val downloadManager: DownloadManager,
+    private val playerService: PlayerService
 ) : ViewModel() {
     
     /**
@@ -34,5 +35,21 @@ class DownloadsListViewModel(
      */
     fun deleteDownload(fileItem: FileItem) {
         downloadManager.deleteDownload(fileItem)
+    }
+
+    /**
+     * Play a downloaded file using its local file path.
+     */
+    fun playFile(fileItem: FileItem) {
+        val localPath = downloadManager.getLocalFilePath(fileItem) ?: return
+        val mediaItem = FileItemMediaPlayer(
+            id = fileItem.googleDriveId,
+            title = fileItem.title,
+            artist = "",
+            url = localPath,
+            isLive = false,
+            artworkUrl = null
+        )
+        playerService.playItem(mediaItem)
     }
 }
