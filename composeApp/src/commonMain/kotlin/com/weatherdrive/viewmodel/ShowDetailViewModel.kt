@@ -41,10 +41,18 @@ class ShowDetailViewModel(
 
     private fun loadShow() {
         viewModelScope.launch {
-            val show = repository.getShowById(showId)
-            fileItemIndex = show?.filelist?.associateBy { it.googleDriveId } ?: emptyMap()
-            _show.value = show?.let { ShowItem.from(it) }
-            _isFavourite.value = favouriteDatabase.isFavourite(showId)
+            try {
+                val show = repository.getShowById(showId)
+                fileItemIndex = show?.filelist?.associateBy { it.googleDriveId } ?: emptyMap()
+                _show.value = show?.let { ShowItem.from(it) }
+                _isFavourite.value = try {
+                    favouriteDatabase.isFavourite(showId)
+                } catch (_: Exception) {
+                    false
+                }
+            } catch (e: Exception) {
+                println("ShowDetailViewModel: Failed to load show $showId: ${e.message}")
+            }
         }
     }
 
@@ -54,12 +62,16 @@ class ShowDetailViewModel(
     fun toggleFavourite() {
         val currentShow = _show.value ?: return
         viewModelScope.launch {
-            if (_isFavourite.value) {
-                favouriteDatabase.delete(showId)
-                _isFavourite.value = false
-            } else {
-                favouriteDatabase.insert(showId, currentShow.title)
-                _isFavourite.value = true
+            try {
+                if (_isFavourite.value) {
+                    favouriteDatabase.delete(showId)
+                    _isFavourite.value = false
+                } else {
+                    favouriteDatabase.insert(showId, currentShow.title)
+                    _isFavourite.value = true
+                }
+            } catch (e: Exception) {
+                println("ShowDetailViewModel: Failed to toggle favourite: ${e.message}")
             }
         }
     }
@@ -101,7 +113,11 @@ class ShowDetailViewModel(
      */
     fun startDownload(streamId: String) {
         val fileItem = fileItemIndex[streamId] ?: return
-        downloadManager.startDownload(fileItem)
+        downloadManager.startDownload(
+            fileItem = fileItem,
+            showTitle = _show.value?.title ?: "",
+            artworkUrl = _show.value?.thumbnail
+        )
     }
 
     /**
