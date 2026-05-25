@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0A4C298650BAF736D5EE4EF6 /* _internal_linkage_SwiftPMImport in Frameworks */ = {isa = PBXBuildFile; productRef = 252229A468CE1F313D93D4AD /* _internal_linkage_SwiftPMImport */; };
+		75F44063183074E4C1601BDE /* KotlinMultiplatformLinkedPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 0038937D47D1D0391E1364CD /* KotlinMultiplatformLinkedPackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,7 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0A4C298650BAF736D5EE4EF6 /* _internal_linkage_SwiftPMImport in Frameworks */,
+				75F44063183074E4C1601BDE /* KotlinMultiplatformLinkedPackage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,7 +84,7 @@
 			);
 			name = Weatherdrive;
 			packageProductDependencies = (
-				252229A468CE1F313D93D4AD /* _internal_linkage_SwiftPMImport */,
+				0038937D47D1D0391E1364CD /* KotlinMultiplatformLinkedPackage */,
 			);
 			productName = Weatherdrive;
 			productReference = 5E5651B32F55B2A10092CC04 /* Weatherdrive.app */;
@@ -115,7 +115,7 @@
 			mainGroup = 5E5651AA2F55B2A10092CC04;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				851D5516E597D722AECDAFF9 /* XCLocalSwiftPackageReference "_internal_linkage_SwiftPMImport" */,
+				0D0E94C18970BE9117F51C9A /* XCLocalSwiftPackageReference "KotlinMultiplatformLinkedPackage" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5E5651B42F55B2A10092CC04 /* Products */;
@@ -316,13 +316,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
@@ -359,13 +360,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
@@ -394,16 +396,16 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		851D5516E597D722AECDAFF9 /* XCLocalSwiftPackageReference "_internal_linkage_SwiftPMImport" */ = {
+		0D0E94C18970BE9117F51C9A /* XCLocalSwiftPackageReference "KotlinMultiplatformLinkedPackage" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = _internal_linkage_SwiftPMImport;
+			relativePath = KotlinMultiplatformLinkedPackage;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		252229A468CE1F313D93D4AD /* _internal_linkage_SwiftPMImport */ = {
+		0038937D47D1D0391E1364CD /* KotlinMultiplatformLinkedPackage */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = _internal_linkage_SwiftPMImport;
+			productName = KotlinMultiplatformLinkedPackage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

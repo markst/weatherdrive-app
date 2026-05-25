@@ -14,7 +14,7 @@ let package = Package(
   ],
   dependencies: [
     .package(
-      path: "../../../../radioplayer-kt/radioplayer/native",
+      path: "../../../../submodules/radioplayer-kt/radioplayer/native"
     )
   ],
   targets: [
@@ -23,7 +23,7 @@ let package = Package(
       dependencies: [
         .product(
           name: "RadioPlayer",
-          package: "native",
+          package: "native"
         )
       ]
     )
