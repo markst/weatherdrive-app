@@ -9,6 +9,7 @@
         android:maxSdkVersion="32" />
 
     <application
+        android:name=".WeatherdriveApp"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:requestLegacyExternalStorage="true">
