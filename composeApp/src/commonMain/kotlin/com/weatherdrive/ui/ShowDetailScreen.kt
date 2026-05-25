@@ -1,8 +1,12 @@
 package com.weatherdrive.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -14,11 +18,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -38,12 +47,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.ShowItem
 import com.weatherdrive.player.PlaybackUiState
+import com.weatherdrive.util.formatDuration
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
 import com.weatherdrive.util.formatTime
@@ -99,12 +114,15 @@ fun ShowDetailScreen(
     onBack: () -> Unit = {},
     showTopBar: Boolean = true
 ) {
-    val viewModel: ShowDetailViewModel = koinViewModel { parametersOf(showId) }
+    val viewModel: ShowDetailViewModel = koinViewModel(
+        key = "show_$showId"
+    ) { parametersOf(showId) }
     val show by viewModel.show.collectAsState()
 
     // Show loading state while fetching show data
     if (show == null) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 if (showTopBar) {
                     TopAppBar(
@@ -116,7 +134,12 @@ fun ShowDetailScreen(
                                     contentDescription = "Back"
                                 )
                             }
-                        }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                            titleContentColor = MaterialTheme.colorScheme.onBackground
+                        )
                     )
                 }
             }
@@ -124,10 +147,11 @@ fun ShowDetailScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         }
         return
@@ -159,15 +183,17 @@ fun ShowDetailScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             if (showTopBar) {
                 TopAppBar(
-                    title = { Text(currentShow.title) },
+                    title = { },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onBackground
                             )
                         }
                     },
@@ -176,10 +202,20 @@ fun ShowDetailScreen(
                             Icon(
                                 imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = if (isFavourite) "Remove from favourites" else "Add to favourites",
-                                tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
+                        IconButton(onClick = { }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    )
                 )
             }
         }
@@ -187,88 +223,204 @@ fun ShowDetailScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
-                .padding(16.dp)
         ) {
+            // Hero header
             item {
-                if (!currentShow.thumbnail.isNullOrBlank()) {
-                    AsyncImage(
-                        model = currentShow.thumbnail,
-                        contentDescription = currentShow.title,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16f / 9f)
-                            .clip(MaterialTheme.shapes.medium),
-                        contentScale = ContentScale.Crop
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
+                ShowDetailHeader(currentShow)
+            }
 
-                Text(
-                    text = currentShow.title,
-                    style = MaterialTheme.typography.headlineMedium
-                )
+            // Metadata badges
+            item {
+                ShowMetadataBadges(currentShow)
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Date: ${currentShow.date?.formatted ?: ""}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "Category: ${currentShow.category?.formattedName ?: "Unknown"}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (currentShow.streams.isNotEmpty()) {
+            // Streams section
+            if (currentShow.streams.isNotEmpty()) {
+                item {
                     Spacer(modifier = Modifier.height(24.dp))
-
                     Text(
-                        text = "Available Files",
-                        style = MaterialTheme.typography.titleLarge
+                        text = "All episodes",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                items(currentShow.streams) { stream ->
+                    val downloadState = downloadStates[stream.id] ?: DownloadUiState()
+                    val isCurrentlyPlaying = playbackState.currentFileId == stream.id
+                    StreamCard(
+                        stream = stream,
+                        downloadState = downloadState,
+                        isCurrentlyPlaying = isCurrentlyPlaying,
+                        playbackState = if (isCurrentlyPlaying) playbackState else null,
+                        onDownloadClick = { viewModel.startDownload(stream.id) },
+                        onCancelClick = { viewModel.cancelDownload(stream.id) },
+                        onPlayClick = { viewModel.playStream(stream.id) },
+                        onPauseClick = { viewModel.togglePlayPause() }
+                    )
                 }
             }
 
-            items(currentShow.streams) { stream ->
-                val downloadState = downloadStates[stream.id] ?: DownloadUiState()
-                val isCurrentlyPlaying = playbackState.currentFileId == stream.id
-                StreamCard(
-                    stream = stream,
-                    downloadState = downloadState,
-                    isCurrentlyPlaying = isCurrentlyPlaying,
-                    playbackState = if (isCurrentlyPlaying) playbackState else null,
-                    onDownloadClick = { viewModel.startDownload(stream.id) },
-                    onCancelClick = { viewModel.cancelDownload(stream.id) },
-                    onPlayClick = { viewModel.playStream(stream.id) },
-                    onPauseClick = { viewModel.togglePlayPause() }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
+            // Tracklisting
             if (currentShow.tracklisting.isNotBlank()) {
                 item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Tracklisting",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = currentShow.tracklisting,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Tracklisting",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            TracklistingContent(currentShow.tracklisting)
+                        }
+                    }
+                }
+            }
+
+            // Bottom spacing for player
+            item { Spacer(modifier = Modifier.height(100.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun ShowDetailHeader(show: ShowItem) {
+    Box(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Thumbnail with gradient overlay
+        if (!show.thumbnail.isNullOrBlank()) {
+            Box {
+                AsyncImage(
+                    model = show.thumbnail,
+                    contentDescription = show.title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f),
+                    contentScale = ContentScale.Crop
+                )
+                // Gradient overlay fading to background
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
+                                    MaterialTheme.colorScheme.background
+                                )
+                            )
+                        )
+                )
+            }
+        }
+
+        // Title overlaid at bottom of hero
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (!show.thumbnail.isNullOrBlank()) {
+                        Modifier.aspectRatio(16f / 9f)
+                    } else {
+                        Modifier.padding(top = 8.dp)
+                    }
+                )
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            Text(
+                text = show.title.uppercase(),
+                style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Black,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ShowMetadataBadges(show: ShowItem) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            show.category?.let { category ->
+                MetadataBadge(
+                    text = category.formattedName,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            show.date?.formatted?.let { dateStr ->
+                if (dateStr.isNotBlank()) {
+                    MetadataBadge(
+                        text = dateStr,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+            if (show.totalDuration > 0) {
+                MetadataBadge(
+                    text = show.totalDuration.formatDuration(),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (show.streams.isNotEmpty()) {
+                MetadataBadge(
+                    text = "${show.streams.size} file${if (show.streams.size != 1) "s" else ""}",
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun MetadataBadge(
+    text: String,
+    containerColor: Color,
+    contentColor: Color
+) {
+    Box(
+        modifier = Modifier
+            .background(containerColor, RoundedCornerShape(20.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = contentColor,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
@@ -284,20 +436,22 @@ private fun StreamCard(
     onPauseClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = if (isCurrentlyPlaying) {
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        } else {
-            CardDefaults.cardColors()
-        }
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isCurrentlyPlaying) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(14.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -307,7 +461,10 @@ private fun StreamCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stream.title,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -319,49 +476,86 @@ private fun StreamCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                PlaybackControlButton(
-                    isCurrentlyPlaying = isCurrentlyPlaying,
-                    playbackState = playbackState,
-                    onPlayClick = onPlayClick,
-                    onPauseClick = onPauseClick
-                )
-
-                // Download controls
+                // Download & play controls — must download before playback
                 when (downloadState.status) {
                     DownloadStatus.DOWNLOADING, DownloadStatus.PENDING -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            IconButton(onClick = onCancelClick) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            IconButton(onClick = onCancelClick, modifier = Modifier.size(36.dp)) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Cancel"
+                                    contentDescription = "Cancel",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     }
                     DownloadStatus.COMPLETED -> {
-                        Text(
-                            text = "✓ Downloaded",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                        // Play button — only shown when downloaded
+                        PlaybackControlButton(
+                            isCurrentlyPlaying = isCurrentlyPlaying,
+                            playbackState = playbackState,
+                            onPlayClick = onPlayClick,
+                            onPauseClick = onPauseClick
                         )
                     }
                     DownloadStatus.FAILED -> {
-                        Text(
-                            text = "✗ Failed",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "Failed",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            // Retry download
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                                    .clip(CircleShape)
+                                    .clickable { onDownloadClick() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "⬇",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                     DownloadStatus.IDLE, DownloadStatus.PAUSED -> {
-                        IconButton(onClick = onDownloadClick) {
+                        // Download button — must download before playback
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                .clip(CircleShape)
+                                .clickable { onDownloadClick() },
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
                                 text = "⬇",
-                                style = MaterialTheme.typography.titleLarge
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -376,10 +570,15 @@ private fun StreamCard(
             // Download progress
             if (downloadState.status == DownloadStatus.DOWNLOADING ||
                 downloadState.status == DownloadStatus.PAUSED) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 LinearProgressIndicator(
                     progress = { downloadState.progress },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
@@ -411,9 +610,6 @@ private fun StreamCard(
     }
 }
 
-/**
- * Composable displaying playback control button (play/pause/buffering).
- */
 @Composable
 private fun PlaybackControlButton(
     isCurrentlyPlaying: Boolean,
@@ -423,42 +619,68 @@ private fun PlaybackControlButton(
 ) {
     when {
         isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.BUFFERING -> {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp
-            )
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
         isCurrentlyPlaying && playbackState?.playbackState == PlaybackState.PLAYING -> {
-            IconButton(onClick = onPauseClick) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    .clip(CircleShape)
+                    .clickable { onPauseClick() },
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
-                    imageVector = Icons.Default.Close, // TODO: Replace with pause icon when available
+                    imageVector = Icons.Default.Pause,
                     contentDescription = "Pause",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
         else -> {
-            IconButton(onClick = onPlayClick) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    .clip(CircleShape)
+                    .clickable { onPlayClick() },
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Play"
+                    contentDescription = "Play",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
     }
 }
 
-/**
- * Composable displaying playback progress with elapsed and duration times.
- */
 @Composable
 private fun PlaybackProgressIndicator(progress: Progress) {
     if (progress.duration > 0) {
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         LinearProgressIndicator(
             progress = { (progress.elapsed / progress.duration).toFloat() },
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp)),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
         Spacer(modifier = Modifier.height(4.dp))
         Row(
@@ -475,6 +697,82 @@ private fun PlaybackProgressIndicator(progress: Progress) {
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+private data class TrackEntry(
+    val timestamp: String,
+    val title: String,
+    val artist: String?
+)
+
+private val timestampRegex = Regex("""^\[(\d{1,2}:\d{2}(?::\d{2})?)](.*)$""")
+
+private fun parseTracklisting(raw: String): List<TrackEntry> {
+    return raw.lines()
+        .filter { it.isNotBlank() }
+        .mapNotNull { line ->
+            val match = timestampRegex.find(line.trim())
+            if (match != null) {
+                val timestamp = "[${match.groupValues[1]}]"
+                val rest = match.groupValues[2].trim()
+                val separatorIndex = rest.indexOfFirst { it == '-' || it == '–' || it == '—' }
+                if (separatorIndex > 0) {
+                    val title = rest.substring(0, separatorIndex).trim()
+                    val artist = rest.substring(separatorIndex + 1).trim()
+                    TrackEntry(timestamp, title, artist.ifBlank { null })
+                } else {
+                    TrackEntry(timestamp, rest, null)
+                }
+            } else {
+                null
+            }
+        }
+}
+
+@Composable
+private fun TracklistingContent(tracklisting: String) {
+    val tracks = parseTracklisting(tracklisting)
+
+    if (tracks.isEmpty()) {
+        // No timestamps found — render as plain text
+        Text(
+            text = tracklisting,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        tracks.forEach { track ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = track.timestamp,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontFamily = FontFamily.Monospace
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.width(88.dp)
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = track.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
+                    track.artist?.let { artist ->
+                        Text(
+                            text = "by $artist",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
         }
     }
 }
