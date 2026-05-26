@@ -2,6 +2,7 @@ package com.weatherdrive.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -285,7 +286,9 @@ fun ShowDetailScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(12.dp))
-                            TracklistingContent(currentShow.tracklisting)
+                            SelectionContainer {
+                                TracklistingContent(currentShow.tracklisting)
+                            }
                         }
                     }
                 }
