@@ -1,5 +1,6 @@
 package com.weatherdrive.model
 
+import com.weatherdrive.util.decodeHtml
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -16,7 +17,7 @@ data class Show(
     val tracklisting: String = ""
 ) {
     val title: String
-        get() = titles.joinToString(", ")
+        get() = titles.joinToString(", ") { it.decodeHtml() }
 
     /** Convenience accessor that returns the year portion of the date. */
     val year: String
