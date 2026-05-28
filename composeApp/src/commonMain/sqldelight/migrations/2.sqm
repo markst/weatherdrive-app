@@ -1,1 +1,10 @@
-ALTER TABLE DownloadedFile ADD COLUMN show TEXT;
+DROP TABLE IF EXISTS DownloadedFile;
+
+CREATE TABLE DownloadedFile (
+    googleDriveId TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    fileSizeInMB INTEGER NOT NULL,
+    timeInSeconds INTEGER NOT NULL,
+    largerThan100MB INTEGER NOT NULL,
+    show TEXT
+);
