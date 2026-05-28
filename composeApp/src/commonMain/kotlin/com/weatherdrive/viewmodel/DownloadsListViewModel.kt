@@ -77,11 +77,11 @@ class DownloadsListViewModel(
         val localPath = downloadManager.getLocalFilePath(fileItem) ?: return
         val mediaItem = FileItemMediaPlayer(
             id = fileItem.googleDriveId,
-            title = fileItem.title.ifBlank { downloadProgress.showTitle },
-            artist = downloadProgress.showTitle,
+            title = fileItem.title.ifBlank { downloadProgress.show?.title ?: "" },
+            artist = downloadProgress.show?.title ?: "",
             url = localPath,
             isLive = false,
-            artworkUrl = downloadProgress.artworkUrl
+            artworkUrl = downloadProgress.show?.thumbnail
         )
         playerService.playItem(mediaItem)
     }

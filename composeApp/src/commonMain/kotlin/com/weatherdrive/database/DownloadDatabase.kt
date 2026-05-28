@@ -2,11 +2,13 @@ package com.weatherdrive.database
 
 import app.cash.sqldelight.db.SqlDriver
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.Show
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 data class PersistedDownload(
     val fileItem: FileItem,
-    val showTitle: String = "",
-    val artworkUrl: String? = null
+    val show: Show? = null
 )
 
 /**
@@ -15,16 +17,16 @@ data class PersistedDownload(
  */
 class DownloadDatabase(driver: SqlDriver) {
     private val db = Downloads(driver)
+    private val json = Json { ignoreUnknownKeys = true }
 
-    fun insert(fileItem: FileItem, showTitle: String = "", artworkUrl: String? = null) {
+    fun insert(fileItem: FileItem, show: Show? = null) {
         db.downloadedFilesQueries.insertDownloadedFile(
             googleDriveId = fileItem.googleDriveId,
             title = fileItem.title,
             fileSizeInMB = fileItem.fileSizeInMB.toLong(),
             timeInSeconds = fileItem.timeInSeconds.toLong(),
             largerThan100MB = if (fileItem.largerThan100MB) 1L else 0L,
-            showTitle = showTitle,
-            artworkUrl = artworkUrl
+            show = show?.let { json.encodeToString(it) }
         )
     }
 
@@ -42,8 +44,7 @@ class DownloadDatabase(driver: SqlDriver) {
                     timeInSeconds = row.timeInSeconds.toInt(),
                     largerThan100MB = row.largerThan100MB != 0L
                 ),
-                showTitle = row.showTitle,
-                artworkUrl = row.artworkUrl
+                show = row.show?.let { runCatching { json.decodeFromString<Show>(it) }.getOrNull() }
             )
         }
     }
