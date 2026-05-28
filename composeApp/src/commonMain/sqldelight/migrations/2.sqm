@@ -1,2 +1,1 @@
-ALTER TABLE DownloadedFile ADD COLUMN showTitle TEXT NOT NULL DEFAULT '';
-ALTER TABLE DownloadedFile ADD COLUMN artworkUrl TEXT;
+ALTER TABLE DownloadedFile ADD COLUMN show TEXT;
