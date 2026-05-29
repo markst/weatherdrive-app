@@ -3,7 +3,9 @@ package com.weatherdrive.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
+import com.weatherdrive.model.Show
 import com.weatherdrive.ui.DownloadsListScreen
+import com.weatherdrive.ui.ShowDetailScreen
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UINavigationController
 
@@ -31,9 +33,10 @@ actual class DownloadsCoordinator(
 
     private fun setupNavigationController() {
         val downloadsVC = ComposeUIViewController {
-            // UINavigationController provides its own native navigation bar, so the
-            // Compose TopAppBar is not needed on iOS.
-            DownloadsListScreen(showTopBar = false)
+            DownloadsListScreen(
+                showTopBar = false,
+                onShowClick = { show -> navigateToShowDetail(show) }
+            )
         }
         navigationController.setViewControllers(listOf(downloadsVC), animated = false)
     }
@@ -53,6 +56,17 @@ actual class DownloadsCoordinator(
             factory = { navigationController },
             modifier = androidx.compose.ui.Modifier
         )
+    }
+
+    actual fun navigateToShowDetail(show: Show) {
+        val detailVC = ComposeUIViewController {
+            ShowDetailScreen(
+                showId = show.id,
+                onBack = { navigateBack() },
+                showTopBar = false
+            )
+        }
+        navigationController.pushViewController(detailVC, animated = true)
     }
 
     actual fun navigateBack() {

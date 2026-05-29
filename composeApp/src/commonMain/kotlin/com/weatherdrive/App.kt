@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.weatherdrive.navigation.AppCoordinator
 import com.weatherdrive.ui.PlayerView
+import com.weatherdrive.ui.theme.WeatherDriveTheme
 import com.weatherdrive.viewmodel.PlayerViewModel
 import dev.markturnip.expandable.ExpandableSettings
 import dev.markturnip.expandable.MinimizableHandler
@@ -36,7 +37,7 @@ fun App() {
     val handler = remember { MinimizableHandler(scope, settings) }
     val playerViewModel: PlayerViewModel = koinInject()
 
-    MaterialTheme {
+    WeatherDriveTheme {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.BottomCenter
@@ -62,7 +63,7 @@ fun App() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .expandable(handler = handler, scope = scope)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .background(MaterialTheme.colorScheme.surface),
                 viewModel = playerViewModel,
                 miniHandler = handler
             )

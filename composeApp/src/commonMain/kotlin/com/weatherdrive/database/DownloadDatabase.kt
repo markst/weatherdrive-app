@@ -2,6 +2,14 @@ package com.weatherdrive.database
 
 import app.cash.sqldelight.db.SqlDriver
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.Show
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+data class PersistedDownload(
+    val fileItem: FileItem,
+    val show: Show? = null
+)
 
 /**
  * Wraps the SQLDelight-generated [Downloads] database, providing typed CRUD
@@ -9,14 +17,16 @@ import com.weatherdrive.model.FileItem
  */
 class DownloadDatabase(driver: SqlDriver) {
     private val db = Downloads(driver)
+    private val json = Json { ignoreUnknownKeys = true }
 
-    fun insert(fileItem: FileItem) {
+    fun insert(fileItem: FileItem, show: Show? = null) {
         db.downloadedFilesQueries.insertDownloadedFile(
             googleDriveId = fileItem.googleDriveId,
             title = fileItem.title,
             fileSizeInMB = fileItem.fileSizeInMB.toLong(),
             timeInSeconds = fileItem.timeInSeconds.toLong(),
-            largerThan100MB = if (fileItem.largerThan100MB) 1L else 0L
+            largerThan100MB = if (fileItem.largerThan100MB) 1L else 0L,
+            show = show?.let { json.encodeToString(it) }
         )
     }
 
@@ -24,14 +34,17 @@ class DownloadDatabase(driver: SqlDriver) {
         db.downloadedFilesQueries.deleteDownloadedFile(googleDriveId)
     }
 
-    fun getAll(): List<FileItem> {
+    fun getAll(): List<PersistedDownload> {
         return db.downloadedFilesQueries.getAllDownloadedFiles().executeAsList().map { row ->
-            FileItem(
-                googleDriveId = row.googleDriveId,
-                title = row.title,
-                fileSizeInMB = row.fileSizeInMB.toInt(),
-                timeInSeconds = row.timeInSeconds.toInt(),
-                largerThan100MB = row.largerThan100MB != 0L
+            PersistedDownload(
+                fileItem = FileItem(
+                    googleDriveId = row.googleDriveId,
+                    title = row.title,
+                    fileSizeInMB = row.fileSizeInMB.toInt(),
+                    timeInSeconds = row.timeInSeconds.toInt(),
+                    largerThan100MB = row.largerThan100MB != 0L
+                ),
+                show = row.show?.let { runCatching { json.decodeFromString<Show>(it) }.getOrNull() }
             )
         }
     }

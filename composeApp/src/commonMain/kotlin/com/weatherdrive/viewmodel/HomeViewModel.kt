@@ -37,7 +37,7 @@ class HomeViewModel(private val repository: ShowRepository) : ViewModel() {
                 }
             }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState.Loading)
+        .stateIn(viewModelScope, SharingStarted.Lazily, UiState.Loading)
 
     fun refresh() {
         viewModelScope.launch { refreshTrigger.emit(Unit) }

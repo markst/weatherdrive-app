@@ -15,7 +15,9 @@ data class ShowItem(
     val thumbnail: String?,
     val streams: List<Stream>,
     val totalDuration: Int,
-    val tracklisting: String
+    val tracklisting: String,
+    val webpageUrl: String? = null,
+    val webpageTitle: String? = null
 ) {
     sealed class Stream {
         abstract val title: String
@@ -46,23 +48,34 @@ data class ShowItem(
     }
 
     companion object {
-        fun from(show: Show): ShowItem = ShowItem(
-            id = show.id,
-            title = show.titles.joinToString(", ") { it.decodeHtml() },
-            category = Category.fromValue(show.category),
-            date = show.date,
-            thumbnail = show.thumbnail,
-            streams = show.filelist.map { fileItem ->
-                Stream.GoogleDrive(
-                    title = fileItem.title.decodeHtml(),
-                    fileSize = fileItem.fileSizeInMB.formatFileSize(),
-                    id = fileItem.googleDriveId,
-                    timeInSeconds = fileItem.timeInSeconds
-                )
-            },
-            totalDuration = show.filelist.sumOf { it.timeInSeconds },
-            tracklisting = show.tracklisting.decodeHtml()
-        )
+        fun from(show: Show): ShowItem {
+            val showTitle = show.titles.joinToString(", ") { it.decodeHtml() }
+            val fileCount = show.filelist.size
+            return ShowItem(
+                id = show.id,
+                title = showTitle,
+                category = Category.fromValue(show.category),
+                date = show.date,
+                thumbnail = show.thumbnail,
+                streams = show.filelist.mapIndexed { index, fileItem ->
+                    val streamTitle = when {
+                        fileItem.title.isNotBlank() -> fileItem.title.decodeHtml()
+                        fileCount > 1 -> "$showTitle - Part ${index + 1}"
+                        else -> showTitle
+                    }
+                    Stream.GoogleDrive(
+                        title = streamTitle,
+                        fileSize = fileItem.fileSizeInMB.formatFileSize(),
+                        id = fileItem.googleDriveId,
+                        timeInSeconds = fileItem.timeInSeconds
+                    )
+                },
+                totalDuration = show.filelist.sumOf { it.timeInSeconds },
+                tracklisting = show.tracklisting.decodeHtml(),
+                webpageUrl = show.webpage?.url,
+                webpageTitle = show.webpage?.title
+            )
+        }
     }
 }
 

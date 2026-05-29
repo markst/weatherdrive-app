@@ -16,6 +16,7 @@ data class PlaybackUiState(
     val isPlaying: Boolean = false,
     val currentFileId: String? = null,
     val currentTitle: String? = null,
+    val currentItem: MediaPlayerItem? = null,
     val playbackState: PlaybackState = PlaybackState.STOPPED,
     val progress: Progress? = null
 )
@@ -63,7 +64,8 @@ class PlayerService(
     fun playItem(mediaItem: MediaPlayerItem) {
         _playbackState.value = _playbackState.value.copy(
             currentFileId = mediaItem.id,
-            currentTitle = mediaItem.title
+            currentTitle = mediaItem.title,
+            currentItem = mediaItem
         )
         mediaPlayer.playItem(mediaItem)
         val savedPosition = database.getProgress(mediaItem.id)

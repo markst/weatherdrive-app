@@ -19,12 +19,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         MainViewControllerKt.doInitKoin()
 
-        let tabBarController = UITabBarController()
-        let coordinator = AppCoordinator(tabBarController: tabBarController)
-        let rootVC = coordinator.getTabBarController()
+        let rootVC = MainViewControllerKt.MainViewController()
 
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = rootVC
+        window.overrideUserInterfaceStyle = .dark
         window.makeKeyAndVisible()
         self.window = window
     }

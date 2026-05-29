@@ -10,6 +10,7 @@ import com.linroid.ketch.core.Ketch
 import com.linroid.ketch.engine.KtorHttpEngine
 import com.weatherdrive.database.DownloadDatabase
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.Show
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.persistence.deleteFile
 import com.weatherdrive.persistence.fileExists
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 
 data class DownloadProgress(
     val fileItem: FileItem,
+    val show: Show? = null,
     val state: DownloadProgressState = DownloadProgressState.Idle,
     val progress: Float = 0f,
     val bytesPerSecond: Long = 0,
@@ -71,10 +73,10 @@ class DownloadManager(
         loadPersistedDownloads()
     }
 
-    fun startDownload(fileItem: FileItem) {
+    fun startDownload(fileItem: FileItem, show: Show? = null) {
         scope.launch {
             try {
-                setDownloadPending(fileItem)
+                setDownloadPending(fileItem, show)
                 val (downloadUrl, accessToken) = fetchFileAccessInfo(fileItem.googleDriveId)
                 val filename = generateFilename(fileItem)
                 startKetchDownload(fileItem, downloadUrl, accessToken, filename)
@@ -122,10 +124,11 @@ class DownloadManager(
         }
     }
 
-    private fun setDownloadPending(fileItem: FileItem) {
+    private fun setDownloadPending(fileItem: FileItem, show: Show? = null) {
         updateDownload(fileItem.googleDriveId) {
             DownloadProgress(
                 fileItem = fileItem,
+                show = show,
                 state = DownloadProgressState.Pending,
                 progress = 0f
             )
@@ -133,9 +136,8 @@ class DownloadManager(
     }
 
     private fun setDownloadFailed(fileItem: FileItem, error: String) {
-        updateDownload(fileItem.googleDriveId) {
-            DownloadProgress(
-                fileItem = fileItem,
+        updateDownload(fileItem.googleDriveId) { current ->
+            (current ?: DownloadProgress(fileItem = fileItem)).copy(
                 state = DownloadProgressState.Failed,
                 progress = 0f,
                 error = error
@@ -158,9 +160,8 @@ class DownloadManager(
             }
             is DownloadState.Downloading -> {
                 val progress = state.progress
-                updateDownload(fileItem.googleDriveId) {
-                    DownloadProgress(
-                        fileItem = fileItem,
+                updateDownload(fileItem.googleDriveId) { current ->
+                    (current ?: DownloadProgress(fileItem = fileItem)).copy(
                         state = DownloadProgressState.Downloading,
                         progress = progress.percent,
                         bytesPerSecond = progress.bytesPerSecond,
@@ -177,13 +178,14 @@ class DownloadManager(
                 }
             }
             is DownloadState.Completed -> {
+                val metadata = _downloads.value[fileItem.googleDriveId]
                 updateDownload(fileItem.googleDriveId) { current ->
                     (current ?: DownloadProgress(fileItem = fileItem)).copy(
                         state = DownloadProgressState.Completed,
                         progress = 1f
                     )
                 }
-                saveMetadata(fileItem)
+                saveMetadata(fileItem, metadata?.show)
                 activeTasks.remove(fileItem.googleDriveId)
             }
             is DownloadState.Failed -> {
@@ -258,10 +260,10 @@ class DownloadManager(
      * Saves FileItem metadata to the database on download completion,
      * so the completed download state can be restored after app restarts.
      */
-    private fun saveMetadata(fileItem: FileItem) {
+    private fun saveMetadata(fileItem: FileItem, show: Show? = null) {
         scope.launch {
             try {
-                database.insert(fileItem)
+                database.insert(fileItem, show)
             } catch (e: Exception) {
                 // Silently ignore metadata save errors
             }
@@ -288,14 +290,15 @@ class DownloadManager(
     private fun loadPersistedDownloads() {
         scope.launch {
             try {
-                val restored = database.getAll().filter { fileItem ->
-                    fileExists("$downloadDirectory/${generateFilename(fileItem)}")
+                val restored = database.getAll().filter { downloadedFile ->
+                    fileExists("$downloadDirectory/${generateFilename(downloadedFile.fileItem)}")
                 }
                 if (restored.isNotEmpty()) {
                     _downloads.update { current ->
-                        current + restored.associate { fileItem ->
-                            fileItem.googleDriveId to DownloadProgress(
-                                fileItem = fileItem,
+                        current + restored.associate { downloadedFile ->
+                            downloadedFile.fileItem.googleDriveId to DownloadProgress(
+                                fileItem = downloadedFile.fileItem,
+                                show = downloadedFile.show,
                                 state = DownloadProgressState.Completed,
                                 progress = 1f
                             )

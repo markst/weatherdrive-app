@@ -1,5 +1,6 @@
 package com.weatherdrive.model
 
+import com.weatherdrive.util.decodeHtml
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,10 +14,11 @@ data class Show(
     val date: ShowDate? = null,
     val category: String = "",
     val filelist: List<FileItem> = emptyList(),
-    val tracklisting: String = ""
+    val tracklisting: String = "",
+    val webpage: Webpage? = null
 ) {
     val title: String
-        get() = titles.joinToString(", ")
+        get() = titles.joinToString(", ") { it.decodeHtml() }
 
     /** Convenience accessor that returns the year portion of the date. */
     val year: String
@@ -30,5 +32,11 @@ data class FileItem(
     val fileSizeInMB: Int = 0,
     val timeInSeconds: Int = 0,
     val largerThan100MB: Boolean = false
+)
+
+@Serializable
+data class Webpage(
+    val url: String,
+    val title: String = ""
 )
 
