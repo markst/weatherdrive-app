@@ -37,7 +37,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +52,7 @@ import com.weatherdrive.download.DownloadProgress
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.player.PlaybackUiState
+import com.weatherdrive.model.Show
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
 import com.weatherdrive.viewmodel.DownloadsListViewModel
@@ -63,15 +63,12 @@ import org.koin.compose.viewmodel.koinViewModel
 fun DownloadsListScreen(
     viewModel: DownloadsListViewModel = koinViewModel<DownloadsListViewModel>(),
     onBack: (() -> Unit)? = null,
+    onShowClick: ((Show) -> Unit)? = null,
     showTopBar: Boolean = true
 ) {
     val downloads by viewModel.downloads.collectAsState()
     val playbackState by viewModel.playbackState.collectAsState()
     val persistedProgress by viewModel.persistedProgress.collectAsState()
-
-    LaunchedEffect(downloads, playbackState.currentFileId) {
-        viewModel.refreshProgress()
-    }
 
     val activeDownloads = downloads.values.filter {
         it.state == DownloadProgressState.Downloading ||
@@ -224,6 +221,9 @@ fun DownloadsListScreen(
                                     viewModel.playFile(downloadProgress)
                                 }
                             },
+                            onShowClick = downloadProgress.show?.let { show ->
+                                onShowClick?.let { { it(show) } }
+                            },
                             onDeleteClick = { itemToDelete = downloadProgress.fileItem }
                         )
                     }
@@ -270,12 +270,15 @@ private fun DownloadItemCard(
     playbackState: PlaybackUiState,
     persistedProgressSeconds: Double?,
     onPlayPauseClick: () -> Unit,
+    onShowClick: (() -> Unit)?,
     onDeleteClick: () -> Unit
 ) {
     val fileItem = downloadProgress.fileItem
     val isCurrentItem = playbackState.currentFileId == fileItem.googleDriveId
     
     Card(
+        onClick = { onShowClick?.invoke() },
+        enabled = onShowClick != null,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(

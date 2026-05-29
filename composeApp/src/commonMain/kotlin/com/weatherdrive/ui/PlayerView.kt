@@ -22,14 +22,19 @@ import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -74,9 +79,9 @@ fun PlayerView(
                 .height(miniHandler.settings.maximizedHeight)
         ) {
             // Full-size artwork background
-            if (!playbackState.artworkUrl.isNullOrBlank()) {
+            if (!playbackState.currentItem?.artworkUrl.isNullOrBlank()) {
                 AsyncImage(
-                    model = playbackState.artworkUrl,
+                    model = playbackState.currentItem?.artworkUrl,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
@@ -150,7 +155,7 @@ fun PlayerView(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-                    playbackState.currentArtist?.let { artist ->
+                    playbackState.currentItem?.artist?.let { artist ->
                         if (artist.isNotBlank()) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
@@ -167,7 +172,7 @@ fun PlayerView(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Progress bar
-                ProgressSection(playbackState)
+                ProgressSection(playbackState, onSeek = { viewModel.seekTo(it) })
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -242,9 +247,9 @@ fun PlayerView(
                 .fillMaxWidth()
         ) {
             // Mini artwork thumbnail
-            if (!playbackState.artworkUrl.isNullOrBlank()) {
+            if (!playbackState.currentItem?.artworkUrl.isNullOrBlank()) {
                 AsyncImage(
-                    model = playbackState.artworkUrl,
+                    model = playbackState.currentItem?.artworkUrl,
                     contentDescription = null,
                     modifier = Modifier
                         .size(44.dp)
@@ -281,7 +286,7 @@ fun PlayerView(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                playbackState.currentArtist?.let { artist ->
+                playbackState.currentItem?.artist?.let { artist ->
                     if (artist.isNotBlank()) {
                         Text(
                             text = artist,
@@ -294,48 +299,78 @@ fun PlayerView(
                 }
             }
 
-            // Mini play/pause button
+            // Mini play/pause button with circular progress ring
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .clickable { viewModel.togglePlayPause() },
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(48.dp)
             ) {
-                Icon(
-                    imageVector = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (playbackState.isPlaying) "Pause" else "Play",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(22.dp)
-                )
+                val miniProgress = playbackState.progress
+                val miniFraction = if (miniProgress != null && miniProgress.duration > 0) {
+                    (miniProgress.elapsed / miniProgress.duration).toFloat().coerceIn(0f, 1f)
+                } else null
+
+                if (miniFraction != null) {
+                    CircularProgressIndicator(
+                        progress = { miniFraction },
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        strokeWidth = 3.dp
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable { viewModel.togglePlayPause() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (playbackState.isPlaying) "Pause" else "Play",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ProgressSection(playbackState: PlaybackUiState) {
+private fun ProgressSection(playbackState: PlaybackUiState, onSeek: (Double) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
     ) {
         val progress = playbackState.progress
-        val progressFraction = if (progress != null && progress.duration > 0) {
-            (progress.elapsed / progress.duration).toFloat().coerceIn(0f, 1f)
+        val duration = progress?.duration ?: 0.0
+        val progressFraction = if (progress != null && duration > 0) {
+            (progress.elapsed / duration).toFloat().coerceIn(0f, 1f)
         } else {
             0f
         }
-        
-        LinearProgressIndicator(
-            progress = { progressFraction },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(4.dp)
-                .clip(MaterialTheme.shapes.small),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+
+        // Track whether the user is actively dragging so we don't fight live updates
+        var isDragging by remember { mutableFloatStateOf(-1f) }
+        val displayFraction = if (isDragging >= 0f) isDragging else progressFraction
+
+        Slider(
+            value = displayFraction,
+            onValueChange = { isDragging = it },
+            onValueChangeFinished = {
+                if (duration > 0) onSeek(isDragging * duration)
+                isDragging = -1f
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         )
         
         Row(

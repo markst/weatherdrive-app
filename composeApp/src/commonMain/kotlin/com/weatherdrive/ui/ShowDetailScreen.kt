@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
@@ -45,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -169,6 +171,7 @@ fun ShowDetailScreen(
     val playbackState by viewModel.playbackState.collectAsState()
     val downloads by viewModel.downloadManager.downloads.collectAsState()
     val isFavourite by viewModel.isFavourite.collectAsState()
+    val uriHandler = LocalUriHandler.current
 
     // Map download progress to UI state keyed by stream id
     val downloadStates = currentShow.streams.associate { stream ->
@@ -235,6 +238,42 @@ fun ShowDetailScreen(
             // Metadata badges
             item {
                 ShowMetadataBadges(currentShow)
+            }
+
+            // Webpage button
+            if (currentShow.webpageUrl != null) {
+                item {
+                    val label = currentShow.webpageTitle
+                        ?.takeIf { it.isNotBlank() }
+                        ?: currentShow.webpageUrl
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surface)
+                            .clickable { uriHandler.openUri(currentShow.webpageUrl) }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.OpenInBrowser,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
 
             // Streams section
