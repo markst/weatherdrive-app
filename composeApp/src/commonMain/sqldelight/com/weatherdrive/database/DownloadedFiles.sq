@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS DownloadedFile (
     fileSizeInMB INTEGER NOT NULL,
     timeInSeconds INTEGER NOT NULL,
     largerThan100MB INTEGER NOT NULL,
+    -- Full Show is stored as serialized JSON (no relational Show table).
     show TEXT
 );
 
