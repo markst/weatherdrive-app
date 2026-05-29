@@ -15,7 +15,9 @@ data class ShowItem(
     val thumbnail: String?,
     val streams: List<Stream>,
     val totalDuration: Int,
-    val tracklisting: String
+    val tracklisting: String,
+    val webpageUrl: String? = null,
+    val webpageTitle: String? = null
 ) {
     sealed class Stream {
         abstract val title: String
@@ -69,7 +71,9 @@ data class ShowItem(
                     )
                 },
                 totalDuration = show.filelist.sumOf { it.timeInSeconds },
-                tracklisting = show.tracklisting.decodeHtml()
+                tracklisting = show.tracklisting.decodeHtml(),
+                webpageUrl = show.webpage?.url,
+                webpageTitle = show.webpage?.title
             )
         }
     }
