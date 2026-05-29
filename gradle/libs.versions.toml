@@ -13,6 +13,7 @@ ketch = "0.0.1-rc7"
 koin = "4.2.1"
 media3Exoplayer = "1.10.1"
 sqldelight = "2.1.0"
+haze = "2.0.0-alpha02"
 
 [libraries]
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
@@ -40,6 +41,8 @@ androidx-media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+haze-blur = { module = "dev.chrisbanes.haze:haze-blur", version.ref = "haze" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
