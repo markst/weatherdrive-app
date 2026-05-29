@@ -8,8 +8,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.weatherdrive.model.Show
 import com.weatherdrive.navigation.routes.DownloadsHomeRoute
+import com.weatherdrive.navigation.routes.ShowDetailRoute
+import com.weatherdrive.navigation.routes.toRoute
 import com.weatherdrive.ui.DownloadsListScreen
+import com.weatherdrive.ui.ShowDetailScreen
 
 /**
  * Android implementation of DownloadsCoordinator.
@@ -32,9 +37,17 @@ actual class DownloadsCoordinator actual constructor() {
             startDestination = DownloadsHomeRoute
         ) {
             composable<DownloadsHomeRoute> {
-                DownloadsListScreen()
+                DownloadsListScreen(onShowClick = { show -> navigateToShowDetail(show) })
+            }
+            composable<ShowDetailRoute> { backStackEntry ->
+                val route: ShowDetailRoute = backStackEntry.toRoute()
+                ShowDetailScreen(showId = route.id, onBack = { navigateBack() }, showTopBar = false)
             }
         }
+    }
+
+    actual fun navigateToShowDetail(show: Show) {
+        navController?.navigate(show.toRoute())
     }
 
     actual fun navigateBack() {
