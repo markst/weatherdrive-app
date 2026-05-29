@@ -1,2 +1,11 @@
-ALTER TABLE DownloadedFile ADD COLUMN showTitle TEXT NOT NULL DEFAULT '';
-ALTER TABLE DownloadedFile ADD COLUMN artworkUrl TEXT;
+DROP TABLE IF EXISTS DownloadedFile;
+
+CREATE TABLE DownloadedFile (
+    googleDriveId TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    fileSizeInMB INTEGER NOT NULL,
+    timeInSeconds INTEGER NOT NULL,
+    largerThan100MB INTEGER NOT NULL,
+    -- Full Show is stored as serialized JSON (no relational Show table).
+    show TEXT
+);

@@ -4,13 +4,13 @@ CREATE TABLE IF NOT EXISTS DownloadedFile (
     fileSizeInMB INTEGER NOT NULL,
     timeInSeconds INTEGER NOT NULL,
     largerThan100MB INTEGER NOT NULL,
-    showTitle TEXT NOT NULL DEFAULT '',
-    artworkUrl TEXT
+    -- Full Show is stored as serialized JSON (no relational Show table).
+    show TEXT
 );
 
 insertDownloadedFile:
-INSERT OR REPLACE INTO DownloadedFile (googleDriveId, title, fileSizeInMB, timeInSeconds, largerThan100MB, showTitle, artworkUrl)
-VALUES (:googleDriveId, :title, :fileSizeInMB, :timeInSeconds, :largerThan100MB, :showTitle, :artworkUrl);
+INSERT OR REPLACE INTO DownloadedFile (googleDriveId, title, fileSizeInMB, timeInSeconds, largerThan100MB, show)
+VALUES (:googleDriveId, :title, :fileSizeInMB, :timeInSeconds, :largerThan100MB, :show);
 
 deleteDownloadedFile:
 DELETE FROM DownloadedFile WHERE googleDriveId = :googleDriveId;

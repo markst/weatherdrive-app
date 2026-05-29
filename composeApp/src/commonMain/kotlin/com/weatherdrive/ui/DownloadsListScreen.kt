@@ -304,7 +304,7 @@ private fun DownloadItemCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                val displayTitle = fileItem.title.ifBlank { downloadProgress.showTitle }
+                val displayTitle = fileItem.title.ifBlank { downloadProgress.show?.title ?: "" }
                 Text(
                     text = displayTitle,
                     style = MaterialTheme.typography.titleMedium,
@@ -312,10 +312,10 @@ private fun DownloadItemCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (downloadProgress.showTitle.isNotBlank() && fileItem.title.isNotBlank()) {
+                if (downloadProgress.show?.title?.isNotBlank() == true && fileItem.title.isNotBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = downloadProgress.showTitle,
+                        text = downloadProgress.show.title,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
@@ -426,7 +426,7 @@ private fun ActiveDownloadCard(downloadProgress: DownloadProgress) {
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = fileItem.title.ifBlank { downloadProgress.showTitle },
+                        text = fileItem.title.ifBlank { downloadProgress.show?.title ?: "" },
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 2,

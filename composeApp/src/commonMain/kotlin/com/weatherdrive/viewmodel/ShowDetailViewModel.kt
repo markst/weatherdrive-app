@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.weatherdrive.database.FavouriteDatabase
 import com.weatherdrive.download.DownloadManager
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.Show
 import com.weatherdrive.model.ShowItem
 import com.weatherdrive.player.PlayerService
 import com.weatherdrive.player.PlaybackUiState
@@ -30,6 +31,9 @@ class ShowDetailViewModel(
     /** Cached lookup of FileItem by googleDriveId for O(1) stream operations. */
     private var fileItemIndex: Map<String, FileItem> = emptyMap()
 
+    /** Raw Show domain model, retained for persisting the full relationship on download. */
+    private var rawShow: Show? = null
+
     val playbackState: StateFlow<PlaybackUiState> = playerService.playbackState
 
     private val _isFavourite = MutableStateFlow(false)
@@ -43,6 +47,7 @@ class ShowDetailViewModel(
         viewModelScope.launch {
             try {
                 val show = repository.getShowById(showId)
+                rawShow = show
                 fileItemIndex = show?.filelist?.associateBy { it.googleDriveId } ?: emptyMap()
                 _show.value = show?.let { ShowItem.from(it) }
                 _isFavourite.value = try {
@@ -115,8 +120,7 @@ class ShowDetailViewModel(
         val fileItem = fileItemIndex[streamId] ?: return
         downloadManager.startDownload(
             fileItem = fileItem,
-            showTitle = _show.value?.title ?: "",
-            artworkUrl = _show.value?.thumbnail
+            show = rawShow
         )
     }
 

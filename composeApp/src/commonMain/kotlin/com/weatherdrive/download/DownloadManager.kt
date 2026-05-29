@@ -10,6 +10,7 @@ import com.linroid.ketch.core.Ketch
 import com.linroid.ketch.engine.KtorHttpEngine
 import com.weatherdrive.database.DownloadDatabase
 import com.weatherdrive.model.FileItem
+import com.weatherdrive.model.Show
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.persistence.deleteFile
 import com.weatherdrive.persistence.fileExists
@@ -25,8 +26,7 @@ import kotlinx.coroutines.launch
 
 data class DownloadProgress(
     val fileItem: FileItem,
-    val showTitle: String = "",
-    val artworkUrl: String? = null,
+    val show: Show? = null,
     val state: DownloadProgressState = DownloadProgressState.Idle,
     val progress: Float = 0f,
     val bytesPerSecond: Long = 0,
@@ -73,10 +73,10 @@ class DownloadManager(
         loadPersistedDownloads()
     }
 
-    fun startDownload(fileItem: FileItem, showTitle: String = "", artworkUrl: String? = null) {
+    fun startDownload(fileItem: FileItem, show: Show? = null) {
         scope.launch {
             try {
-                setDownloadPending(fileItem, showTitle, artworkUrl)
+                setDownloadPending(fileItem, show)
                 val (downloadUrl, accessToken) = fetchFileAccessInfo(fileItem.googleDriveId)
                 val filename = generateFilename(fileItem)
                 startKetchDownload(fileItem, downloadUrl, accessToken, filename)
@@ -124,12 +124,11 @@ class DownloadManager(
         }
     }
 
-    private fun setDownloadPending(fileItem: FileItem, showTitle: String = "", artworkUrl: String? = null) {
+    private fun setDownloadPending(fileItem: FileItem, show: Show? = null) {
         updateDownload(fileItem.googleDriveId) {
             DownloadProgress(
                 fileItem = fileItem,
-                showTitle = showTitle,
-                artworkUrl = artworkUrl,
+                show = show,
                 state = DownloadProgressState.Pending,
                 progress = 0f
             )
@@ -186,7 +185,7 @@ class DownloadManager(
                         progress = 1f
                     )
                 }
-                saveMetadata(fileItem, metadata?.showTitle ?: "", metadata?.artworkUrl)
+                saveMetadata(fileItem, metadata?.show)
                 activeTasks.remove(fileItem.googleDriveId)
             }
             is DownloadState.Failed -> {
@@ -261,10 +260,10 @@ class DownloadManager(
      * Saves FileItem metadata to the database on download completion,
      * so the completed download state can be restored after app restarts.
      */
-    private fun saveMetadata(fileItem: FileItem, showTitle: String = "", artworkUrl: String? = null) {
+    private fun saveMetadata(fileItem: FileItem, show: Show? = null) {
         scope.launch {
             try {
-                database.insert(fileItem, showTitle, artworkUrl)
+                database.insert(fileItem, show)
             } catch (e: Exception) {
                 // Silently ignore metadata save errors
             }
@@ -299,8 +298,7 @@ class DownloadManager(
                         current + restored.associate { downloadedFile ->
                             downloadedFile.fileItem.googleDriveId to DownloadProgress(
                                 fileItem = downloadedFile.fileItem,
-                                showTitle = downloadedFile.showTitle,
-                                artworkUrl = downloadedFile.artworkUrl,
+                                show = downloadedFile.show,
                                 state = DownloadProgressState.Completed,
                                 progress = 1f
                             )
