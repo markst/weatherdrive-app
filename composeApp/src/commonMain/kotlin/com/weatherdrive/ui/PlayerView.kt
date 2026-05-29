@@ -70,7 +70,6 @@ fun PlayerView(
         modifier = modifier
             .fillMaxWidth()
             .clipToBounds()
-            .background(MaterialTheme.colorScheme.surface)
     ) {
         // Expanded view content
         Box(

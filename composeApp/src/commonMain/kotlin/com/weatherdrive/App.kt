@@ -18,6 +18,11 @@ import com.weatherdrive.navigation.AppCoordinator
 import com.weatherdrive.ui.PlayerView
 import com.weatherdrive.ui.theme.WeatherDriveTheme
 import com.weatherdrive.viewmodel.PlayerViewModel
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.markturnip.expandable.ExpandableSettings
 import dev.markturnip.expandable.MinimizableHandler
 import dev.markturnip.expandable.expandable
@@ -36,13 +41,17 @@ fun App() {
     )
     val handler = remember { MinimizableHandler(scope, settings) }
     val playerViewModel: PlayerViewModel = koinInject()
+    val hazeState = remember { HazeState() }
 
     WeatherDriveTheme {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.BottomCenter
         ) {
-            coordinator.Content()
+            // Wrap content in a haze source so the player can blur what's behind it
+            Box(modifier = Modifier.fillMaxSize().hazeSource(state = hazeState)) {
+                coordinator.Content()
+            }
             
             // Overlay that blocks interaction when player is expanded
             if (handler.transparency > 0f) {
@@ -63,7 +72,12 @@ fun App() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .expandable(handler = handler, scope = scope)
-                    .background(MaterialTheme.colorScheme.surface),
+                    .hazeEffect(state = hazeState) {
+                        blurEffect {
+                            blurRadius = 18.dp
+                            colorEffects = listOf(HazeColorEffect.tint(Color.Gray.copy(alpha = 0.2f)))
+                        }
+                    },
                 viewModel = playerViewModel,
                 miniHandler = handler
             )
