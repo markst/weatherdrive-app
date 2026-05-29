@@ -9,3 +9,8 @@ CREATE TABLE DownloadedFile (
     -- Full Show is stored as serialized JSON (no relational Show table).
     show TEXT
 );
+
+CREATE TABLE IF NOT EXISTS FavouriteShow (
+    showId INTEGER NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL
+);
