@@ -73,8 +73,8 @@ android {
     defaultConfig {
         applicationId = "dev.markturnip.weatherdrive"
         minSdk = 26
-        versionCode = 1
         targetSdk = 37
+        versionCode = 2
         versionName = "1.0"
     }
 
