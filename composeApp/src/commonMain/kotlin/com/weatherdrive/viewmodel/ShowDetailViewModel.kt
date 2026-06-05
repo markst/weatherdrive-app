@@ -90,7 +90,7 @@ class ShowDetailViewModel(
         val localPath = downloadManager.getLocalFilePath(fileItem) ?: return
         val mediaItem = FileItemMediaPlayer(
             id = fileItem.googleDriveId,
-            title = fileItem.title,
+            title = fileItem.title.ifBlank { show.value?.title ?: "" },
             artist = _show.value?.title ?: "",
             url = localPath,
             isLive = false,
