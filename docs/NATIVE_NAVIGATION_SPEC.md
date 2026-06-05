@@ -328,7 +328,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
 
-        MainViewControllerKt.doInitKoin()
+        KoinInitializerKt.doInitKoin()
 
         let tabBarController = UITabBarController()
         let coordinator = AppCoordinator(tabBarController: tabBarController)
