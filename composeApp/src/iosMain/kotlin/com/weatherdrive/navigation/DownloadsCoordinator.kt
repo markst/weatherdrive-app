@@ -6,6 +6,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.model.Show
 import com.weatherdrive.ui.DownloadsListScreen
 import com.weatherdrive.ui.ShowDetailScreen
+import com.weatherdrive.ui.theme.WeatherDriveTheme
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UINavigationController
 
@@ -33,11 +34,15 @@ actual class DownloadsCoordinator(
 
     private fun setupNavigationController() {
         val downloadsVC = ComposeUIViewController {
-            DownloadsListScreen(
-                showTopBar = false,
-                onShowClick = { show -> navigateToShowDetail(show) }
-            )
+            WeatherDriveTheme {
+                DownloadsListScreen(
+                    showTopBar = false,
+                    onShowClick = { show -> navigateToShowDetail(show) }
+                )
+            }
         }
+        downloadsVC.title = "Downloads"
+        navigationController.navigationBar.prefersLargeTitles = true
         navigationController.setViewControllers(listOf(downloadsVC), animated = false)
     }
 
@@ -60,12 +65,15 @@ actual class DownloadsCoordinator(
 
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
-            ShowDetailScreen(
-                showId = show.id,
-                onBack = { navigateBack() },
-                showTopBar = false
-            )
+            WeatherDriveTheme {
+                ShowDetailScreen(
+                    showId = show.id,
+                    onBack = { navigateBack() },
+                    showTopBar = false
+                )
+            }
         }
+        detailVC.title = ""
         navigationController.pushViewController(detailVC, animated = true)
     }
 
