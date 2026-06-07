@@ -6,6 +6,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.weatherdrive.model.Show
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
+import com.weatherdrive.ui.theme.WeatherDriveTheme
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
@@ -34,13 +35,15 @@ actual class BrowseCoordinator(
 
     private fun setupNavigationController() {
         val homeVC = ComposeUIViewController {
-            HomeScreen(
-                onShowClick = { show -> navigateToShowDetail(show) },
-                // UINavigationController provides its own native navigation bar, so the
-                // Compose TopAppBar is not needed on iOS.
-                showTopBar = false
-            )
+            WeatherDriveTheme {
+                HomeScreen(
+                    onShowClick = { show -> navigateToShowDetail(show) },
+                    showTopBar = false
+                )
+            }
         }
+        homeVC.title = "Browse"
+        navigationController.navigationBar.prefersLargeTitles = false
         navigationController.setViewControllers(listOf(homeVC), animated = false)
     }
 
@@ -51,12 +54,14 @@ actual class BrowseCoordinator(
      */
     fun start(): UIViewController {
         return ComposeUIViewController {
-            HomeScreen(
-                onShowClick = { show -> navigateToShowDetail(show) },
-                // UINavigationController provides its own native navigation bar, so the
-                // Compose TopAppBar is not needed on iOS.
-                showTopBar = false
-            )
+            WeatherDriveTheme {
+                HomeScreen(
+                    onShowClick = { show -> navigateToShowDetail(show) },
+                    // UINavigationController provides its own native navigation bar, so the
+                    // Compose TopAppBar is not needed on iOS.
+                    showTopBar = false
+                )
+            }
         }
     }
 
@@ -80,14 +85,15 @@ actual class BrowseCoordinator(
 
     actual fun navigateToShowDetail(show: Show) {
         val detailVC = ComposeUIViewController {
-            ShowDetailScreen(
-                showId = show.id,
-                onBack = { navigateBack() },
-                // UINavigationController provides its own native navigation bar, so the
-                // Compose TopAppBar is not needed on iOS.
-                showTopBar = false
-            )
+            WeatherDriveTheme {
+                ShowDetailScreen(
+                    showId = show.id,
+                    onBack = { navigateBack() },
+                    showTopBar = false
+                )
+            }
         }
+        detailVC.title = ""
         navigationController.pushViewController(detailVC, animated = true)
     }
 
