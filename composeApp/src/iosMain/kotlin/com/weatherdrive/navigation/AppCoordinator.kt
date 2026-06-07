@@ -1,9 +1,14 @@
 package com.weatherdrive.navigation
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitViewController
 import kotlinx.cinterop.ExperimentalForeignApi
+import platform.UIKit.UIImage
 import platform.UIKit.UITabBarController
+import platform.UIKit.UITabBarItem
+import platform.UIKit.tabBarItem
 
 /**
  * iOS implementation of AppCoordinator.
@@ -34,8 +39,16 @@ actual class AppCoordinator(
         val browseNav = browseCoordinator.getNavigationController()
         val downloadsNav = downloadsCoordinator.getNavigationController()
 
-        browseNav.setTitle("Browse")
-        downloadsNav.setTitle("Downloads")
+        browseNav.tabBarItem = UITabBarItem(
+            title = "Browse",
+            image = UIImage.systemImageNamed("house.fill"),
+            selectedImage = null
+        )
+        downloadsNav.tabBarItem = UITabBarItem(
+            title = "Downloads",
+            image = UIImage.systemImageNamed("arrow.down.circle"),
+            selectedImage = null
+        )
 
         tabBarController.setViewControllers(listOf(browseNav, downloadsNav), animated = false)
         applyBarAppearance(
@@ -57,7 +70,7 @@ actual class AppCoordinator(
     actual fun Content() {
         UIKitViewController(
             factory = { tabBarController },
-            modifier = androidx.compose.ui.Modifier
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
