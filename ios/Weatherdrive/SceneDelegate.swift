@@ -20,6 +20,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         MainViewControllerKt.doInitKoin()
 
         let rootVC = MainViewControllerKt.MainViewController()
+        rootVC.overrideUserInterfaceStyle = .dark
 
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = rootVC
