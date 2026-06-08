@@ -38,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
@@ -48,6 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import com.weatherdrive.ui.components.blurTransformation
+import coil3.request.ImageRequest
+import coil3.request.transformations
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.util.formatDuration
 import com.weatherdrive.viewmodel.PlayerViewModel
@@ -60,7 +63,8 @@ fun PlayerView(
     miniHandler: MinimizableHandler
 ) {
     val playbackState by viewModel.playbackState.collectAsState()
-    
+    val context = LocalPlatformContext.current
+
     // Only show player when there's content to display
     if (playbackState.currentTitle == null) {
         return
@@ -81,11 +85,13 @@ fun PlayerView(
             // Full-size artwork background
             if (!playbackState.currentItem?.artworkUrl.isNullOrBlank()) {
                 AsyncImage(
-                    model = playbackState.currentItem?.artworkUrl,
+                    model = ImageRequest.Builder(context)
+                        .data(playbackState.currentItem?.artworkUrl)
+                        .transformations(blurTransformation(8f))
+                        .build(),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
-                        .blur(24.dp)
                         .alpha(miniHandler.fraction.value),
                     contentScale = ContentScale.Crop
                 )
