@@ -13,6 +13,7 @@ data class ShowItem(
     val category: Category?,
     val date: ShowDate?,
     val thumbnail: String?,
+    val content: String,
     val streams: List<Stream>,
     val totalDuration: Int,
     val tracklisting: String,
@@ -57,6 +58,7 @@ data class ShowItem(
                 category = Category.fromValue(show.category),
                 date = show.date,
                 thumbnail = show.thumbnail,
+                content = show.content.decodeHtml(),
                 streams = show.filelist.mapIndexed { index, fileItem ->
                     val streamTitle = when {
                         fileItem.title.isNotBlank() -> fileItem.title.decodeHtml()
