@@ -13,6 +13,7 @@ data class Show(
     val thumbnail: String? = null,
     val date: ShowDate? = null,
     val category: String = "",
+    val content: String = "",
     val filelist: List<FileItem> = emptyList(),
     val tracklisting: String = "",
     val webpage: Webpage? = null

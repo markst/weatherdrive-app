@@ -74,6 +74,8 @@ import dev.markturnip.radioplayer.Progress
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
+private const val HEADER_ASPECT_RATIO = 1f
+
 /**
  * Represents the current state of a download operation for UI display.
  */
@@ -276,6 +278,38 @@ fun ShowDetailScreen(
                 }
             }
 
+            // Description
+            if (currentShow.content.isNotBlank()) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Description",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            SelectionContainer {
+                                Text(
+                                    text = currentShow.content,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
             // Streams section
             if (currentShow.streams.isNotEmpty()) {
                 item {
@@ -352,14 +386,15 @@ private fun ShowDetailHeader(show: ShowItem) {
                     contentDescription = show.title,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f / 9f),
-                    contentScale = ContentScale.Crop
+                        .aspectRatio(HEADER_ASPECT_RATIO),
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.TopCenter
                 )
                 // Gradient overlay fading to background
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
+                        .aspectRatio(HEADER_ASPECT_RATIO)
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
@@ -376,7 +411,7 @@ private fun ShowDetailHeader(show: ShowItem) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
+                    .aspectRatio(HEADER_ASPECT_RATIO)
                     .background(MaterialTheme.colorScheme.surface)
             )
         }
@@ -385,7 +420,7 @@ private fun ShowDetailHeader(show: ShowItem) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(16f / 9f)
+                .aspectRatio(HEADER_ASPECT_RATIO)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.Bottom
         ) {

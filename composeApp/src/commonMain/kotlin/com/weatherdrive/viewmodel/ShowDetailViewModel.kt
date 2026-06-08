@@ -91,7 +91,7 @@ class ShowDetailViewModel(
         val mediaItem = FileItemMediaPlayer(
             id = fileItem.googleDriveId,
             title = fileItem.title.ifBlank { show.value?.title ?: "" },
-            artist = _show.value?.title ?: "",
+            artist = rawShow?.content ?: "",
             url = localPath,
             isLive = false,
             artworkUrl = _show.value?.thumbnail
