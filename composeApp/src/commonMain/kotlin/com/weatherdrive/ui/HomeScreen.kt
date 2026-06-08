@@ -126,7 +126,8 @@ fun HomeScreen(
                     ExpandableTree(
                         state.treeNodes,
                         onShowClick,
-                        if (showTopBar) paddingValues else WindowInsets.safeDrawing.asPaddingValues()
+                        // possibly needed on ios?
+                        // if (showTopBar) paddingValues else WindowInsets.safeDrawing.asPaddingValues()
                     )
                 }
             }
