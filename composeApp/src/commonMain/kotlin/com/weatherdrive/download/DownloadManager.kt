@@ -77,9 +77,10 @@ class DownloadManager(
         scope.launch {
             try {
                 setDownloadPending(fileItem, show)
+                // Delete any existing destination file before starting so Ketch begins fresh.
+                deleteFile(filePath(fileItem))
                 val (downloadUrl, accessToken) = fetchFileAccessInfo(fileItem.googleDriveId)
-                val filename = generateFilename(fileItem)
-                startKetchDownload(fileItem, downloadUrl, accessToken, filename)
+                startKetchDownload(fileItem, downloadUrl, accessToken)
             } catch (e: Exception) {
                 setDownloadFailed(fileItem, e.message ?: "Unknown error")
             }
@@ -102,15 +103,16 @@ class DownloadManager(
         return "${fileItem.googleDriveId}_$sanitizedTitle.mp3"
     }
 
+    private fun filePath(fileItem: FileItem) = "$downloadDirectory/${generateFilename(fileItem)}"
+
     private suspend fun startKetchDownload(
         fileItem: FileItem,
         downloadUrl: String,
-        accessToken: String,
-        filename: String
+        accessToken: String
     ) {
         val request = DownloadRequest(
             url = downloadUrl,
-            destination = Destination("$downloadDirectory/$filename"),
+            destination = Destination(filePath(fileItem)),
             headers = mapOf("Authorization" to "Bearer $accessToken")
         )
 
@@ -242,8 +244,7 @@ class DownloadManager(
     fun deleteDownload(fileItem: FileItem) {
         scope.launch {
             try {
-                val filename = generateFilename(fileItem)
-                deleteFile("$downloadDirectory/$filename")
+                deleteFile(filePath(fileItem))
             } catch (e: Exception) {
                 // Silently ignore file deletion errors
             }
@@ -291,7 +292,7 @@ class DownloadManager(
         scope.launch {
             try {
                 val restored = database.getAll().filter { downloadedFile ->
-                    fileExists("$downloadDirectory/${generateFilename(downloadedFile.fileItem)}")
+                    fileExists(filePath(downloadedFile.fileItem))
                 }
                 if (restored.isNotEmpty()) {
                     _downloads.update { current ->
@@ -318,8 +319,7 @@ class DownloadManager(
     fun getLocalFilePath(fileItem: FileItem): String? {
         val downloadProgress = _downloads.value[fileItem.googleDriveId]
         return if (downloadProgress?.state == DownloadProgressState.Completed) {
-            val filename = generateFilename(fileItem)
-            "$downloadDirectory/$filename"
+            filePath(fileItem)
         } else {
             null
         }
