@@ -1,6 +1,7 @@
 package com.weatherdrive.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -278,21 +279,21 @@ fun PlayerView(
                 playbackState.currentTitle?.let { title ->
                     Text(
                         text = title,
+                        modifier = Modifier.basicMarquee(),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 1
                     )
                 }
                 playbackState.currentItem?.artist?.let { artist ->
                     if (artist.isNotBlank()) {
                         Text(
                             text = artist,
+                            modifier = Modifier.basicMarquee(),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            maxLines = 1
                         )
                     }
                 }
@@ -391,3 +392,5 @@ private fun ProgressSection(playbackState: PlaybackUiState, onSeek: (Double) -> 
         }
     }
 }
+
+
