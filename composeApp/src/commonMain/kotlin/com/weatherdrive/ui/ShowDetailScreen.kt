@@ -2,15 +2,15 @@ package com.weatherdrive.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -48,13 +49,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -185,6 +186,7 @@ fun ShowDetailScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize(),
         contentWindowInsets = if (showTopBar) ScaffoldDefaults.contentWindowInsets else WindowInsets(0, 0, 0, 0),
         topBar = {
             if (showTopBar) {
@@ -223,10 +225,10 @@ fun ShowDetailScreen(
         }
     ) { paddingValues ->
         LazyColumn(
+            contentPadding = PaddingValues(bottom = paddingValues.calculateBottomPadding()),
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
         ) {
             // Hero header
             item {
@@ -342,7 +344,7 @@ private fun ShowDetailHeader(show: ShowItem) {
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Thumbnail with gradient overlay
+        // Thumbnail with gradient overlay (or placeholder to reserve space)
         if (!show.thumbnail.isNullOrBlank()) {
             Box {
                 AsyncImage(
@@ -370,19 +372,20 @@ private fun ShowDetailHeader(show: ShowItem) {
                         )
                 )
             }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .background(MaterialTheme.colorScheme.surface)
+            )
         }
 
         // Title overlaid at bottom of hero
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (!show.thumbnail.isNullOrBlank()) {
-                        Modifier.aspectRatio(16f / 9f)
-                    } else {
-                        Modifier.padding(top = 8.dp)
-                    }
-                )
+                .aspectRatio(16f / 9f)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.Bottom
         ) {

@@ -16,7 +16,9 @@
     <application
         android:name=".WeatherdriveApp"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.Weatherdrive"
         android:requestLegacyExternalStorage="true">
         <!-- Note: requestLegacyExternalStorage is for API 29 compatibility.
              On API 30+, downloads will use the public Downloads directory via

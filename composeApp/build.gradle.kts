@@ -71,10 +71,10 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.weatherdrive"
+        applicationId = "dev.markturnip.weatherdrive"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 1
+        targetSdk = 37
+        versionCode = 2
         versionName = "1.0"
     }
 
