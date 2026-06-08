@@ -64,7 +64,7 @@ class DownloadsListViewModel(
         val mediaItem = FileItemMediaPlayer(
             id = fileItem.googleDriveId,
             title = fileItem.title.ifBlank { downloadProgress.show?.title ?: "" },
-            artist = downloadProgress.show?.title ?: "",
+            artist = downloadProgress.show?.content ?: "",
             url = localPath,
             isLive = false,
             artworkUrl = downloadProgress.show?.thumbnail
