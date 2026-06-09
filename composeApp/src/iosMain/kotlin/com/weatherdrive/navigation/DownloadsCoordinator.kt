@@ -42,7 +42,7 @@ actual class DownloadsCoordinator(
             }
         }
         downloadsVC.title = "Downloads"
-        navigationController.navigationBar.prefersLargeTitles = true
+        navigationController.navigationBar.prefersLargeTitles = false
         navigationController.setViewControllers(listOf(downloadsVC), animated = false)
     }
 
