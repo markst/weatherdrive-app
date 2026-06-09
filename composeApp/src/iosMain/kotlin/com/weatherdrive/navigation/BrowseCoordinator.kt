@@ -95,6 +95,8 @@ actual class BrowseCoordinator(
         }
         detailVC.title = ""
         navigationController.pushViewController(detailVC, animated = true)
+        // TODO: Investigate applying background effect based on view controller?
+        navigationController.navigationBar.scrollEdgeAppearance?.backgroundEffect = null
     }
 
     actual fun navigateBack() {
