@@ -6,7 +6,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -18,14 +18,12 @@ import com.weatherdrive.navigation.AppCoordinator
 import com.weatherdrive.ui.PlayerView
 import com.weatherdrive.ui.theme.WeatherDriveTheme
 import com.weatherdrive.viewmodel.PlayerViewModel
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.blur.blurEffect
-import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.markturnip.expandable.ExpandableSettings
 import dev.markturnip.expandable.MinimizableHandler
 import dev.markturnip.expandable.expandable
+import io.github.fletchmckee.liquid.liquefiable
+import io.github.fletchmckee.liquid.liquid
+import io.github.fletchmckee.liquid.rememberLiquidState
 import org.koin.compose.koinInject
 
 @Composable
@@ -35,21 +33,21 @@ fun App() {
     val settings = ExpandableSettings(
         minimizedHeight = 70.dp,
         maximizedHeight = 650.dp,
-        bottomPadding = 100.dp,
+        bottomPadding = 110.dp,
         expandedBottomPadding = 8.dp,
         cornerRadius = 35.dp
     )
     val handler = remember { MinimizableHandler(scope, settings) }
     val playerViewModel: PlayerViewModel = koinInject()
-    val hazeState = remember { HazeState() }
+    val liquidState = rememberLiquidState()
 
     WeatherDriveTheme {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.BottomCenter
         ) {
-            // Wrap content in a haze source so the player can blur what's behind it
-            Box(modifier = Modifier.fillMaxSize().hazeSource(state = hazeState)) {
+            // Wrap content in a liquid source so the player can sample what's behind it
+            Box(modifier = Modifier.fillMaxSize().liquefiable(liquidState)) {
                 coordinator.Content()
             }
             
@@ -72,11 +70,12 @@ fun App() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .expandable(handler = handler, scope = scope)
-                    .hazeEffect(state = hazeState) {
-                        blurEffect {
-                            blurRadius = 18.dp
-                            colorEffects = listOf(HazeColorEffect.tint(Color.Gray.copy(alpha = 0.2f)))
-                        }
+                    .liquid(liquidState) {
+                        shape = RoundedCornerShape(settings.cornerRadius)
+                        tint = Color.Gray.copy(alpha = 0.4f)
+                        refraction = 0.5f
+                        curve = 0.5f
+                        edge = 0.1f
                     },
                 viewModel = playerViewModel,
                 miniHandler = handler
