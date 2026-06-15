@@ -24,8 +24,8 @@ val commonModule = module {
     single<SqlDriver> { get<DatabaseDriverFactory>().createDriver() }
     single { DownloadDatabase(get()) }
     single { FavouriteDatabase(get()) }
-    single { DownloadManager(get<WeatherdriveApi>(), get()) }
     single { PlayerService(database = get()) }
+    single { DownloadManager(get<WeatherdriveApi>(), get(), get()) }
     single { PlayerViewModel(get()) }
     viewModel { HomeViewModel(get()) }
     viewModel { (showId: Long) ->

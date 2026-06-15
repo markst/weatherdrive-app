@@ -1,11 +1,10 @@
 package com.weatherdrive.download
 
 import com.linroid.ketch.api.Destination
+import com.linroid.ketch.api.DownloadConfig
 import com.linroid.ketch.api.DownloadRequest
 import com.linroid.ketch.api.DownloadState
 import com.linroid.ketch.api.DownloadTask
-import com.linroid.ketch.api.config.DownloadConfig
-import com.linroid.ketch.api.config.QueueConfig
 import com.linroid.ketch.core.Ketch
 import com.linroid.ketch.engine.KtorHttpEngine
 import com.weatherdrive.database.DownloadDatabase
@@ -14,15 +13,20 @@ import com.weatherdrive.model.Show
 import com.weatherdrive.network.WeatherdriveApi
 import com.weatherdrive.persistence.deleteFile
 import com.weatherdrive.persistence.fileExists
+import com.weatherdrive.player.PlayerService
 import com.weatherdrive.util.sanitizeForFilename
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class DownloadProgress(
     val fileItem: FileItem,
@@ -51,7 +55,8 @@ sealed class DownloadProgressState {
  */
 class DownloadManager(
     private val api: WeatherdriveApi,
-    private val database: DownloadDatabase
+    private val database: DownloadDatabase,
+    private val playerService: PlayerService
 ) {
     private val downloadDirectory: String = getDownloadDirectory()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -59,8 +64,7 @@ class DownloadManager(
     private val ketch = Ketch(
         httpEngine = KtorHttpEngine(),
         config = DownloadConfig(
-            maxConnections = 4,
-            queueConfig = QueueConfig(maxConcurrentDownloads = 2)
+            maxConcurrentDownloads = 4,
         )
     )
 
@@ -68,6 +72,7 @@ class DownloadManager(
     val downloads: StateFlow<Map<String, DownloadProgress>> = _downloads.asStateFlow()
 
     private val activeTasks = mutableMapOf<String, DownloadTask>()
+    private val stateCollectJobs = mutableMapOf<String, Job>()
 
     init {
         loadPersistedDownloads()
@@ -76,14 +81,47 @@ class DownloadManager(
     fun startDownload(fileItem: FileItem, show: Show? = null) {
         scope.launch {
             try {
+                cancelExistingDownload(fileItem.googleDriveId)
                 setDownloadPending(fileItem, show)
-                // Delete any existing destination file before starting so Ketch begins fresh.
-                deleteFile(filePath(fileItem))
+
+                // Drop persisted metadata when replacing an existing download.
+                if (_downloads.value[fileItem.googleDriveId]?.state == DownloadProgressState.Completed) {
+                    deleteMetadata(fileItem)
+                }
+
+                releaseDestination(fileItem)
+
                 val (downloadUrl, accessToken) = fetchFileAccessInfo(fileItem.googleDriveId)
                 startKetchDownload(fileItem, downloadUrl, accessToken)
             } catch (e: Exception) {
                 setDownloadFailed(fileItem, e.message ?: "Unknown error")
             }
+        }
+    }
+
+    private suspend fun cancelExistingDownload(googleDriveId: String) {
+        stateCollectJobs.remove(googleDriveId)?.cancel()
+        val task = activeTasks.remove(googleDriveId) ?: return
+        task.cancel()
+        withTimeoutOrNull(5_000) {
+            task.state.first { it.isTerminal }
+        }
+    }
+
+    /**
+     * Stops playback and closes any file handles so the destination can be
+     * removed or overwritten. Deletion is best-effort — Ketch will truncate
+     * an existing file via preallocate if removal fails.
+     */
+    private suspend fun releaseDestination(fileItem: FileItem) {
+        if (playerService.playbackState.value.currentFileId == fileItem.googleDriveId) {
+            playerService.stop()
+        }
+
+        val path = filePath(fileItem)
+        repeat(5) { attempt ->
+            if (!fileExists(path) || deleteFile(path)) return
+            delay(50L * (attempt + 1))
         }
     }
 
@@ -119,7 +157,8 @@ class DownloadManager(
         val task = ketch.download(request)
         activeTasks[fileItem.googleDriveId] = task
 
-        scope.launch {
+        stateCollectJobs.remove(fileItem.googleDriveId)?.cancel()
+        stateCollectJobs[fileItem.googleDriveId] = scope.launch {
             task.state.collect { state ->
                 handleTaskState(fileItem, state)
             }
@@ -153,7 +192,7 @@ class DownloadManager(
      */
     private fun handleTaskState(fileItem: FileItem, state: DownloadState) {
         when (state) {
-            is DownloadState.Pending -> {
+            is DownloadState.Queued -> {
                 updateDownload(fileItem.googleDriveId) { current ->
                     (current ?: DownloadProgress(fileItem = fileItem)).copy(
                         state = DownloadProgressState.Pending
@@ -189,6 +228,7 @@ class DownloadManager(
                 }
                 saveMetadata(fileItem, metadata?.show)
                 activeTasks.remove(fileItem.googleDriveId)
+                stateCollectJobs.remove(fileItem.googleDriveId)?.cancel()
             }
             is DownloadState.Failed -> {
                 updateDownload(fileItem.googleDriveId) { current ->
@@ -198,6 +238,7 @@ class DownloadManager(
                     )
                 }
                 activeTasks.remove(fileItem.googleDriveId)
+                stateCollectJobs.remove(fileItem.googleDriveId)?.cancel()
             }
             else -> {}
         }
@@ -230,8 +271,7 @@ class DownloadManager(
 
     fun cancelDownload(fileItem: FileItem) {
         scope.launch {
-            activeTasks[fileItem.googleDriveId]?.cancel()
-            activeTasks.remove(fileItem.googleDriveId)
+            cancelExistingDownload(fileItem.googleDriveId)
             _downloads.update { it - fileItem.googleDriveId }
             deleteMetadata(fileItem)
         }
