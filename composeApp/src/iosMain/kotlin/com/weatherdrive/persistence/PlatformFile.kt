@@ -9,8 +9,10 @@ actual fun fileExists(path: String): Boolean {
 
 @OptIn(ExperimentalForeignApi::class)
 actual fun deleteFile(path: String): Boolean {
+    val fileManager = NSFileManager.defaultManager
+    if (!fileManager.fileExistsAtPath(path)) return true
     return try {
-        NSFileManager.defaultManager.removeItemAtPath(path, error = null)
+        fileManager.removeItemAtPath(path, error = null)
     } catch (e: Exception) {
         false
     }
