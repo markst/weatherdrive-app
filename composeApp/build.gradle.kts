@@ -54,8 +54,8 @@ kotlin {
             implementation(libs.ketch.core)
             implementation(libs.ketch.ktor)
             implementation(libs.sqldelight.runtime)
-            implementation(libs.liquid)
-
+            implementation(libs.haze)
+            implementation(libs.haze.blur)
             implementation("dev.markturnip:radioplayer")
             implementation("dev.markturnip:expandable")
         }
