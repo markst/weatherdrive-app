@@ -6,7 +6,8 @@ actual fun fileExists(path: String): Boolean = File(path).exists()
 
 actual fun deleteFile(path: String): Boolean {
     return try {
-        File(path).delete()
+        val file = File(path)
+        !file.exists() || file.delete()
     } catch (e: Exception) {
         false
     }
