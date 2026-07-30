@@ -74,12 +74,12 @@ actual class DownloadsCoordinator(
             }
         }
         detailVC.title = ""
+        applyNavBarAppearance(navigationController.navigationBar, transparentNavBarAppearance)
         navigationController.pushViewController(detailVC, animated = true)
-        // TODO: Investigate applying background effect based on view controller?
-        navigationController.navigationBar.scrollEdgeAppearance?.backgroundEffect = null
     }
 
     actual fun navigateBack() {
         navigationController.popViewControllerAnimated(animated = true)
+        applyNavBarAppearance(navigationController.navigationBar, blurredNavBarAppearance)
     }
 }
