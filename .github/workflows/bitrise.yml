@@ -1,0 +1,20 @@
+name: Bitrise CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  bitrise:
+    name: Trigger Bitrise Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bitrise Build Runner
+        uses: p-mazhnik/bitrise-run-build@v1.2.0
+        with:
+          bitrise-token: ${{ secrets.BITRISE_TOKEN }}
+          bitrise-app-slug: ${{ secrets.BITRISE_APP_SLUG }}
+          listen: 'true'
