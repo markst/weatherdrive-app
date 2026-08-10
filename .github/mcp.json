@@ -4,7 +4,7 @@
       "type": "http",
       "url": "https://mcp.bitrise.io",
       "headers": {
-        "Authorization": "Bearer ${env:BITRISE_TOKEN}"
+        "Authorization": "${COPILOT_MCP_BITRISE_TOKEN}"
       }
     }
   }
