@@ -13,7 +13,7 @@ android {
         applicationId = "dev.markturnip.weatherdrive"
         minSdk = 26
         targetSdk = 37
-        versionCode = System.getenv("BITRISE_BUILD_NUMBER")?.toIntOrNull() ?: 5
+        versionCode = System.getenv("BITRISE_BUILD_NUMBER")?.toIntOrNull() ?: 6
         versionName = "1.0"
     }
 
