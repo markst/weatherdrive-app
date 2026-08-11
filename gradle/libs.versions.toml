@@ -12,7 +12,7 @@ ketch = "0.0.1-rc9"
 koin = "4.2.2"
 media3Exoplayer = "1.11.0"
 sqldelight = "2.3.2"
-haze = "2.0.0-alpha03"
+haze = "2.0.0-alpha04"
 
 [libraries]
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
