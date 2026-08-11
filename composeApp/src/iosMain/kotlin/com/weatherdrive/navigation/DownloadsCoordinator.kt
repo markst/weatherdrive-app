@@ -42,7 +42,7 @@ actual class DownloadsCoordinator(
             }
         }
         downloadsVC.title = "Downloads"
-        navigationController.navigationBar.prefersLargeTitles = true
+        navigationController.navigationBar.prefersLargeTitles = false
         navigationController.setViewControllers(listOf(downloadsVC), animated = false)
     }
 
@@ -74,10 +74,12 @@ actual class DownloadsCoordinator(
             }
         }
         detailVC.title = ""
+        applyNavBarAppearance(navigationController.navigationBar, transparentNavBarAppearance)
         navigationController.pushViewController(detailVC, animated = true)
     }
 
     actual fun navigateBack() {
         navigationController.popViewControllerAnimated(animated = true)
+        applyNavBarAppearance(navigationController.navigationBar, blurredNavBarAppearance)
     }
 }

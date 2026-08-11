@@ -11,14 +11,27 @@ import platform.UIKit.UIBlurEffectStyle
 // Purple80 equivalent: #BB86FC
 private val accentTint = UIColor.colorWithRed(0.733, green = 0.525, blue = 0.988, alpha = 1.0)
 
+private val blurEffect = UIBlurEffect.effectWithStyle(UIBlurEffectStyle.UIBlurEffectStyleSystemUltraThinMaterial)
+
+/** Nav bar appearance with blur (used on root/list screens). */
+val blurredNavBarAppearance = UINavigationBarAppearance().apply {
+    configureWithTransparentBackground()
+    backgroundEffect = blurEffect
+    shadowColor = UIColor.clearColor
+}
+
+/** Nav bar appearance fully transparent (used on detail screens). */
+val transparentNavBarAppearance = UINavigationBarAppearance().apply {
+    configureWithTransparentBackground()
+    backgroundEffect = null
+    shadowColor = UIColor.clearColor
+}
+
 /**
- * Applies the shared dark bar appearance to the given tab bar and to each navigation bar.
- * Navigation bars are transparent with a blur effect; tab bar is dark opaque.
- * Use the real UINavigationBar instances (e.g. from each UINavigationController) to avoid
- * the appearance proxy type cast issue.
+ * Applies the shared bar appearance to the given tab bar and to each navigation bar.
+ * Navigation bars start with blur; tab bar is transparent glass.
  */
 fun applyBarAppearance(tabBar: UITabBar, navigationBars: List<UINavigationBar>) {
-    // Tab bar — transparent (iOS 26 glass tab bar)
     val tabBarAppearance = UITabBarAppearance().apply {
         configureWithTransparentBackground()
         backgroundColor = UIColor.clearColor
@@ -28,20 +41,18 @@ fun applyBarAppearance(tabBar: UITabBar, navigationBars: List<UINavigationBar>) 
     tabBar.scrollEdgeAppearance = tabBarAppearance
     tabBar.tintColor = accentTint
 
-    // Navigation bars — blurred system material
-    val blurEffect = UIBlurEffect.effectWithStyle(UIBlurEffectStyle.UIBlurEffectStyleSystemUltraThinMaterial)
-    val navBarAppearance = UINavigationBarAppearance().apply {
-        configureWithTransparentBackground()
-        backgroundEffect = blurEffect
-        shadowColor = UIColor.clearColor
-    }
     for (navBar in navigationBars) {
         navBar.tintColor = accentTint
         navBar.translucent = true
         navBar.barTintColor = null
         navBar.backgroundColor = UIColor.clearColor
-        navBar.standardAppearance = navBarAppearance
-        navBar.compactAppearance = navBarAppearance
-        navBar.scrollEdgeAppearance = navBarAppearance
+        applyNavBarAppearance(navBar, blurredNavBarAppearance)
     }
+}
+
+/** Swaps the appearance on a navigation bar (e.g. blurred vs transparent). */
+fun applyNavBarAppearance(navBar: UINavigationBar, appearance: UINavigationBarAppearance) {
+    navBar.standardAppearance = appearance
+    navBar.compactAppearance = appearance
+    navBar.scrollEdgeAppearance = appearance
 }

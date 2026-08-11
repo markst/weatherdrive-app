@@ -67,7 +67,7 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = if (showTopBar) ScaffoldDefaults.contentWindowInsets else WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             if (showTopBar) {
                 TopAppBar(
@@ -126,8 +126,7 @@ fun HomeScreen(
                     ExpandableTree(
                         state.treeNodes,
                         onShowClick,
-                        // possibly needed on ios?
-                        // if (showTopBar) paddingValues else WindowInsets.safeDrawing.asPaddingValues()
+                        if (showTopBar) PaddingValues.Zero else WindowInsets.safeDrawing.asPaddingValues()
                     )
                 }
             }
