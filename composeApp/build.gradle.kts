@@ -1,9 +1,10 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
@@ -11,8 +12,16 @@ plugins {
 }
 
 kotlin {
-    androidTarget {
+    android {
+        namespace = "com.weatherdrive.shared"
+        compileSdk = 37
+        minSdk = 26
 
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
+
+        androidResources { enable = true }
     }
 
     listOf(
@@ -30,7 +39,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.navigation.compose)
-            implementation(libs.koin.android)
+            // exposed as api: androidApp's Application class calls androidContext() directly
+            api(libs.koin.android)
             implementation(libs.sqldelight.android.driver)
         }
         commonMain.dependencies {
@@ -48,7 +58,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
-            implementation(libs.koin.core)
+            // exposed as api: androidApp's Application class calls startKoin { modules(...) } directly
+            api(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.ketch.core)
@@ -56,43 +67,14 @@ kotlin {
             implementation(libs.sqldelight.runtime)
             implementation(libs.haze)
             implementation(libs.haze.blur)
-            implementation("dev.markturnip:radioplayer")
+            // exposed as api: androidApp's Application class calls PlatformMediaPlayer.initialize() directly
+            api("dev.markturnip:radioplayer")
             implementation("dev.markturnip:expandable")
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sqldelight.native.driver)
         }
-    }
-}
-
-android {
-    namespace = "com.weatherdrive"
-    compileSdk = 37
-
-    defaultConfig {
-        applicationId = "dev.markturnip.weatherdrive"
-        minSdk = 26
-        targetSdk = 37
-        versionCode = 5
-        versionName = "1.0"
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
