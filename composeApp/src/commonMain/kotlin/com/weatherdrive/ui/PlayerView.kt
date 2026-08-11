@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
@@ -246,11 +245,11 @@ fun PlayerView(
         
         // Minimized player view
         Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .height(miniHandler.settings.minimizedHeight)
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
                 .alpha(1.0f - (4.0f * miniHandler.fraction.value))
                 .fillMaxWidth()
         ) {
@@ -260,15 +259,15 @@ fun PlayerView(
                     model = playbackState.currentItem?.artworkUrl,
                     contentDescription = null,
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .size(40.dp)
+                        .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .size(40.dp)
+                        .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
@@ -310,7 +309,7 @@ fun PlayerView(
             // Mini play/pause button with circular progress ring
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(44.dp)
             ) {
                 val miniProgress = playbackState.progress
                 val miniFraction = if (miniProgress != null && miniProgress.duration > 0) {
@@ -323,13 +322,13 @@ fun PlayerView(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        strokeWidth = 3.dp
+                        strokeWidth = 2.5.dp
                     )
                 }
 
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
                         .clickable { viewModel.togglePlayPause() },
@@ -339,7 +338,7 @@ fun PlayerView(
                         imageVector = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (playbackState.isPlaying) "Pause" else "Play",
                         tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }

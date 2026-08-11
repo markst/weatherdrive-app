@@ -6,7 +6,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -16,13 +15,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.weatherdrive.navigation.AppCoordinator
 import com.weatherdrive.ui.PlayerView
+import com.weatherdrive.ui.theme.PlayerDimens
 import com.weatherdrive.ui.theme.WeatherDriveTheme
 import com.weatherdrive.viewmodel.PlayerViewModel
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import dev.markturnip.expandable.ExpandableSettings
 import dev.markturnip.expandable.MinimizableHandler
 import dev.markturnip.expandable.expandable
@@ -33,11 +33,11 @@ fun App() {
     val coordinator = remember { AppCoordinator() }
     val scope = rememberCoroutineScope()
     val settings = ExpandableSettings(
-        minimizedHeight = 70.dp,
-        maximizedHeight = 650.dp,
-        bottomPadding = 100.dp,
-        expandedBottomPadding = 8.dp,
-        cornerRadius = 35.dp
+        minimizedHeight = PlayerDimens.minimizedHeight,
+        maximizedHeight = PlayerDimens.maximizedHeight,
+        bottomPadding = PlayerDimens.bottomPadding,
+        expandedBottomPadding = PlayerDimens.expandedBottomPadding,
+        cornerRadius = PlayerDimens.cornerRadius
     )
     val handler = remember { MinimizableHandler(scope, settings) }
     val playerViewModel: PlayerViewModel = koinInject()
