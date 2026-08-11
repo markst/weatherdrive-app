@@ -1,3 +1,5 @@
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -37,7 +39,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.navigation.compose)
-            implementation(libs.koin.android)
+            // exposed as api: androidApp's Application class calls androidContext() directly
+            api(libs.koin.android)
             implementation(libs.sqldelight.android.driver)
         }
         commonMain.dependencies {
@@ -55,7 +58,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
-            implementation(libs.koin.core)
+            // exposed as api: androidApp's Application class calls startKoin { modules(...) } directly
+            api(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.ketch.core)
@@ -63,7 +67,8 @@ kotlin {
             implementation(libs.sqldelight.runtime)
             implementation(libs.haze)
             implementation(libs.haze.blur)
-            implementation("dev.markturnip:radioplayer")
+            // exposed as api: androidApp's Application class calls PlatformMediaPlayer.initialize() directly
+            api("dev.markturnip:radioplayer")
             implementation("dev.markturnip:expandable")
         }
         iosMain.dependencies {
