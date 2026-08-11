@@ -5,22 +5,11 @@ import platform.UIKit.UINavigationBar
 import platform.UIKit.UINavigationBarAppearance
 import platform.UIKit.UITabBar
 import platform.UIKit.UITabBarAppearance
-import platform.UIKit.UIBlurEffect
-import platform.UIKit.UIBlurEffectStyle
 
 // Purple80 equivalent: #BB86FC
 private val accentTint = UIColor.colorWithRed(0.733, green = 0.525, blue = 0.988, alpha = 1.0)
 
-private val blurEffect = UIBlurEffect.effectWithStyle(UIBlurEffectStyle.UIBlurEffectStyleSystemUltraThinMaterial)
-
-/** Nav bar appearance with blur (used on root/list screens). */
-val blurredNavBarAppearance = UINavigationBarAppearance().apply {
-    configureWithTransparentBackground()
-    backgroundEffect = blurEffect
-    shadowColor = UIColor.clearColor
-}
-
-/** Nav bar appearance fully transparent (used on detail screens). */
+/** Fully transparent nav bar; list screens use Compose haze for gradient blur instead. */
 val transparentNavBarAppearance = UINavigationBarAppearance().apply {
     configureWithTransparentBackground()
     backgroundEffect = null
@@ -29,7 +18,7 @@ val transparentNavBarAppearance = UINavigationBarAppearance().apply {
 
 /**
  * Applies the shared bar appearance to the given tab bar and to each navigation bar.
- * Navigation bars start with blur; tab bar is transparent glass.
+ * Navigation bars and tab bar are fully transparent.
  */
 fun applyBarAppearance(tabBar: UITabBar, navigationBars: List<UINavigationBar>) {
     val tabBarAppearance = UITabBarAppearance().apply {
@@ -46,11 +35,10 @@ fun applyBarAppearance(tabBar: UITabBar, navigationBars: List<UINavigationBar>) 
         navBar.translucent = true
         navBar.barTintColor = null
         navBar.backgroundColor = UIColor.clearColor
-        applyNavBarAppearance(navBar, blurredNavBarAppearance)
+        applyNavBarAppearance(navBar, transparentNavBarAppearance)
     }
 }
 
-/** Swaps the appearance on a navigation bar (e.g. blurred vs transparent). */
 fun applyNavBarAppearance(navBar: UINavigationBar, appearance: UINavigationBarAppearance) {
     navBar.standardAppearance = appearance
     navBar.compactAppearance = appearance

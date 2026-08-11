@@ -94,12 +94,10 @@ actual class BrowseCoordinator(
             }
         }
         detailVC.title = ""
-        applyNavBarAppearance(navigationController.navigationBar, transparentNavBarAppearance)
         navigationController.pushViewController(detailVC, animated = true)
     }
 
     actual fun navigateBack() {
         navigationController.popViewControllerAnimated(animated = true)
-        applyNavBarAppearance(navigationController.navigationBar, blurredNavBarAppearance)
     }
 }
