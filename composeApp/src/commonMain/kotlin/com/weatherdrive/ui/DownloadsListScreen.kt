@@ -57,6 +57,7 @@ import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.player.PlaybackUiState
 import com.weatherdrive.model.Show
+import com.weatherdrive.ui.theme.PlayerDimens
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
 import com.weatherdrive.viewmodel.DownloadsListViewModel
@@ -234,7 +235,7 @@ fun DownloadsListScreen(
                     }
                 }
 
-                item { Spacer(modifier = Modifier.height(80.dp)) }
+                item { Spacer(modifier = Modifier.height(PlayerDimens.listBottomClearance)) }
             }
         }
     }

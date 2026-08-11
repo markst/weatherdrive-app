@@ -64,6 +64,7 @@ import coil3.compose.AsyncImage
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.ShowItem
 import com.weatherdrive.player.PlaybackUiState
+import com.weatherdrive.ui.theme.PlayerDimens
 import com.weatherdrive.util.formatDuration
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
@@ -368,7 +369,7 @@ fun ShowDetailScreen(
             }
 
             // Bottom spacing for player
-            item { Spacer(modifier = Modifier.height(100.dp)) }
+            item { Spacer(modifier = Modifier.height(PlayerDimens.listBottomClearance)) }
         }
     }
 }
