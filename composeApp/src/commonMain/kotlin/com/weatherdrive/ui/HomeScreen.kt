@@ -30,7 +30,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -38,12 +37,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +58,13 @@ import com.weatherdrive.model.YearNode
 import com.weatherdrive.ui.theme.PlayerDimens
 import com.weatherdrive.viewmodel.HomeViewModel
 import com.weatherdrive.viewmodel.UiState
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazeProgressive
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.hazeBlur
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,33 +75,60 @@ fun HomeScreen(
     showTopBar: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val hazeState = rememberHazeState()
+    val density = LocalDensity.current
+    var topBarHeightPx by remember { mutableStateOf(0) }
+    val background = MaterialTheme.colorScheme.background
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            if (showTopBar) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "Browse",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Black
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = MaterialTheme.colorScheme.onBackground
-                    )
-                )
-            }
+    val topBlurStyle = remember(background) {
+        HazeBlurStyle {
+            blurRadius(32.dp)
+            progressive(
+                HazeProgressive.verticalGradient(
+                    startIntensity = 1f,
+                    endIntensity = 0f,
+                ),
+            )
+            // Hold near the status bar, then dissolve so the title sits on a clear area.
+            mask(
+                Brush.verticalGradient(
+                    0.0f to Color.Black,
+                    0.25f to Color.Black,
+                    0.5f to Color.Black.copy(alpha = 0.35f),
+                    0.75f to Color.Transparent,
+                    1.0f to Color.Transparent,
+                ),
+            )
+            colorEffects(
+                listOf(HazeColorEffect.tint(background.copy(alpha = 0.28f))),
+            )
         }
-    ) { paddingValues ->
+    }
+
+    val safeTopPadding = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
+    val topBarHeight = if (topBarHeightPx > 0) with(density) { topBarHeightPx.toDp() } else 0.dp
+    // Extra height below the bar so the mask can finish fading past the title.
+    val blurOverlayHeight = if (showTopBar) {
+        (if (topBarHeight > 0.dp) topBarHeight else safeTopPadding) + 40.dp
+    } else {
+        safeTopPadding + 40.dp
+    }
+
+    val listTopPadding = when {
+        showTopBar && topBarHeight > 0.dp -> topBarHeight
+        !showTopBar -> safeTopPadding
+        else -> 0.dp
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(background)
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
+                .hazeSource(state = hazeState)
         ) {
             when (val state = uiState) {
                 is UiState.Loading -> Box(
@@ -126,10 +164,40 @@ fun HomeScreen(
                     ExpandableTree(
                         state.treeNodes,
                         onShowClick,
-                        if (showTopBar) PaddingValues.Zero else WindowInsets.safeDrawing.asPaddingValues()
+                        PaddingValues(top = listTopPadding)
                     )
                 }
             }
+        }
+
+        // Blur sits behind the title and fades out below it.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(blurOverlayHeight)
+                .hazeBlur(
+                    input = HazeInput.Sources(hazeState),
+                    style = topBlurStyle,
+                )
+        )
+
+        if (showTopBar) {
+            TopAppBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged { topBarHeightPx = it.height },
+                title = {
+                    Text(
+                        "Browse",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Black
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                )
+            )
         }
     }
 }
