@@ -58,13 +58,6 @@ import com.weatherdrive.model.YearNode
 import com.weatherdrive.ui.theme.PlayerDimens
 import com.weatherdrive.viewmodel.HomeViewModel
 import com.weatherdrive.viewmodel.UiState
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.HazeProgressive
-import dev.chrisbanes.haze.blur.HazeBlurStyle
-import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.hazeBlur
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,40 +68,14 @@ fun HomeScreen(
     showTopBar: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val hazeState = rememberHazeState()
     val density = LocalDensity.current
     var topBarHeightPx by remember { mutableStateOf(0) }
     val background = MaterialTheme.colorScheme.background
 
-    val topBlurStyle = remember(background) {
-        HazeBlurStyle {
-            blurRadius(32.dp)
-            progressive(
-                HazeProgressive.verticalGradient(
-                    startIntensity = 1f,
-                    endIntensity = 0f,
-                ),
-            )
-            // Hold near the status bar, then dissolve so the title sits on a clear area.
-            mask(
-                Brush.verticalGradient(
-                    0.0f to Color.Black,
-                    0.25f to Color.Black,
-                    0.5f to Color.Black.copy(alpha = 0.35f),
-                    0.75f to Color.Transparent,
-                    1.0f to Color.Transparent,
-                ),
-            )
-            colorEffects(
-                listOf(HazeColorEffect.tint(background.copy(alpha = 0.28f))),
-            )
-        }
-    }
-
     val safeTopPadding = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
     val topBarHeight = if (topBarHeightPx > 0) with(density) { topBarHeightPx.toDp() } else 0.dp
-    // Extra height below the bar so the mask can finish fading past the title.
-    val blurOverlayHeight = if (showTopBar) {
+    // Extra height below the bar so the gradient can finish fading past the title.
+    val fadeOverlayHeight = if (showTopBar) {
         (if (topBarHeight > 0.dp) topBarHeight else safeTopPadding) + 40.dp
     } else {
         safeTopPadding + 40.dp
@@ -125,59 +92,56 @@ fun HomeScreen(
             .fillMaxSize()
             .background(background)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = hazeState)
-        ) {
-            when (val state = uiState) {
-                is UiState.Loading -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-                is UiState.Error -> Box(
+        when (val state = uiState) {
+            is UiState.Loading -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+            is UiState.Error -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Error: ${state.message}",
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+            is UiState.Success -> if (state.treeNodes.isEmpty()) {
+                Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Error: ${state.message}",
+                        text = "No shows found.",
                         modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.error,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
-                is UiState.Success -> if (state.treeNodes.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No shows found.",
-                            modifier = Modifier.padding(16.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                } else {
-                    ExpandableTree(
-                        state.treeNodes,
-                        onShowClick,
-                        PaddingValues(top = listTopPadding)
-                    )
-                }
+            } else {
+                ExpandableTree(
+                    state.treeNodes,
+                    onShowClick,
+                    PaddingValues(top = listTopPadding)
+                )
             }
         }
 
-        // Blur sits behind the title and fades out below it.
+        // Solid black at the top, fading to transparent below the title.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(blurOverlayHeight)
-                .hazeBlur(
-                    input = HazeInput.Sources(hazeState),
-                    style = topBlurStyle,
+                .height(fadeOverlayHeight)
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to Color.Black,
+                        0.45f to Color.Black.copy(alpha = 0.7f),
+                        1.0f to Color.Transparent,
+                    )
                 )
         )
 
