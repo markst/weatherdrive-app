@@ -18,11 +18,12 @@ import com.weatherdrive.ui.PlayerView
 import com.weatherdrive.ui.theme.PlayerDimens
 import com.weatherdrive.ui.theme.WeatherDriveTheme
 import com.weatherdrive.viewmodel.PlayerViewModel
-import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.blurEffect
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import dev.markturnip.expandable.ExpandableSettings
 import dev.markturnip.expandable.MinimizableHandler
 import dev.markturnip.expandable.expandable
@@ -41,7 +42,7 @@ fun App() {
     )
     val handler = remember { MinimizableHandler(scope, settings) }
     val playerViewModel: PlayerViewModel = koinInject()
-    val hazeState = remember { HazeState() }
+    val hazeState = rememberHazeState()
 
     WeatherDriveTheme {
         Box(
@@ -72,12 +73,15 @@ fun App() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .expandable(handler = handler, scope = scope)
-                    .hazeEffect(state = hazeState) {
-                        blurEffect {
-                            blurRadius = 18.dp
-                            colorEffects = listOf(HazeColorEffect.tint(Color.Gray.copy(alpha = 0.2f)))
-                        }
-                    },
+                    .hazeBlur(
+                        input = HazeInput.Sources(hazeState),
+                        style = HazeBlurStyle {
+                            blurRadius(18.dp)
+                            colorEffects(
+                                listOf(HazeColorEffect.tint(Color.Gray.copy(alpha = 0.2f))),
+                            )
+                        },
+                    ),
                 viewModel = playerViewModel,
                 miniHandler = handler
             )

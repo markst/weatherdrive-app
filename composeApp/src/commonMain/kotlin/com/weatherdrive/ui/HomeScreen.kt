@@ -30,7 +30,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -38,12 +37,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -64,72 +68,100 @@ fun HomeScreen(
     showTopBar: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val density = LocalDensity.current
+    var topBarHeightPx by remember { mutableStateOf(0) }
+    val background = MaterialTheme.colorScheme.background
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            if (showTopBar) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "Browse",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Black
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = MaterialTheme.colorScheme.onBackground
-                    )
+    val safeTopPadding = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
+    val topBarHeight = if (topBarHeightPx > 0) with(density) { topBarHeightPx.toDp() } else 0.dp
+    // Extra height below the bar so the gradient can finish fading past the title.
+    val fadeOverlayHeight = if (showTopBar) {
+        (if (topBarHeight > 0.dp) topBarHeight else safeTopPadding) + 40.dp
+    } else {
+        safeTopPadding + 40.dp
+    }
+
+    val listTopPadding = when {
+        showTopBar && topBarHeight > 0.dp -> topBarHeight
+        !showTopBar -> safeTopPadding
+        else -> 0.dp
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(background)
+    ) {
+        when (val state = uiState) {
+            is UiState.Loading -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+            is UiState.Error -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Error: ${state.message}",
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
-        ) {
-            when (val state = uiState) {
-                is UiState.Loading -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-                is UiState.Error -> Box(
+            is UiState.Success -> if (state.treeNodes.isEmpty()) {
+                Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Error: ${state.message}",
+                        text = "No shows found.",
                         modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.error,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
-                is UiState.Success -> if (state.treeNodes.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No shows found.",
-                            modifier = Modifier.padding(16.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                } else {
-                    ExpandableTree(
-                        state.treeNodes,
-                        onShowClick,
-                        if (showTopBar) PaddingValues.Zero else WindowInsets.safeDrawing.asPaddingValues()
-                    )
-                }
+            } else {
+                ExpandableTree(
+                    state.treeNodes,
+                    onShowClick,
+                    PaddingValues(top = listTopPadding)
+                )
             }
+        }
+
+        // Solid black at the top, fading to transparent below the title.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(fadeOverlayHeight)
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to Color.Black,
+                        0.45f to Color.Black.copy(alpha = 0.7f),
+                        1.0f to Color.Transparent,
+                    )
+                )
+        )
+
+        if (showTopBar) {
+            TopAppBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged { topBarHeightPx = it.height },
+                title = {
+                    Text(
+                        "Browse",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Black
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                )
+            )
         }
     }
 }
