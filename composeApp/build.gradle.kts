@@ -58,6 +58,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+            api(project(":api"))
             // exposed as api: androidApp's Application class calls startKoin { modules(...) } directly
             api(libs.koin.core)
             implementation(libs.koin.compose)
