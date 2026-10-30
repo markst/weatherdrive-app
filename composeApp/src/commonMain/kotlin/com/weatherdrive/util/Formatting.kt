@@ -9,7 +9,7 @@ import kotlin.math.roundToInt
  */
 fun FileItem.formatInfo(): String {
     val duration = timeInSeconds.formatDuration()
-    return "$fileSizeInMB MB • $duration"
+    return if (fileSizeInMB > 0) "$fileSizeInMB MB • $duration" else duration
 }
 
 /**

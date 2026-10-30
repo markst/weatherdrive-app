@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,15 +46,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.weatherdrive.model.CategoryNode
-import com.weatherdrive.model.Show
+import com.weatherdrive.model.ShowSummary
 import com.weatherdrive.model.YearNode
 import com.weatherdrive.ui.theme.PlayerDimens
 import com.weatherdrive.viewmodel.HomeViewModel
@@ -64,7 +63,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel<HomeViewModel>(),
-    onShowClick: (Show) -> Unit = {},
+    onShowClick: (ShowSummary) -> Unit = {},
     showTopBar: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -125,6 +124,7 @@ fun HomeScreen(
             } else {
                 ExpandableTree(
                     state.treeNodes,
+                    viewModel::loadYear,
                     onShowClick,
                     PaddingValues(top = listTopPadding)
                 )
@@ -167,22 +167,36 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ExpandableTree(treeNodes: List<YearNode>, onShowClick: (Show) -> Unit, contentPadding: PaddingValues = PaddingValues()) {
+private fun ExpandableTree(
+    treeNodes: List<YearNode>,
+    onLoadYear: (String) -> Unit,
+    onShowClick: (ShowSummary) -> Unit,
+    contentPadding: PaddingValues = PaddingValues()
+) {
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp),
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         items(treeNodes, key = { it.year }) { yearNode ->
-            YearRow(yearNode, onShowClick)
+            // Only the newest year opens by default; the rest load when expanded.
+            YearRow(yearNode, yearNode.year == treeNodes.first().year, onLoadYear, onShowClick)
         }
         item { Spacer(modifier = Modifier.height(PlayerDimens.listBottomClearance)) }
     }
 }
 
 @Composable
-private fun YearRow(yearNode: YearNode, onShowClick: (Show) -> Unit) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
+private fun YearRow(
+    yearNode: YearNode,
+    initiallyExpanded: Boolean,
+    onLoadYear: (String) -> Unit,
+    onShowClick: (ShowSummary) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
+    LaunchedEffect(expanded) {
+        if (expanded) onLoadYear(yearNode.year)
+    }
 
     Column(modifier = Modifier.animateContentSize()) {
         // Year header
@@ -210,15 +224,33 @@ private fun YearRow(yearNode: YearNode, onShowClick: (Show) -> Unit) {
         }
 
         if (expanded) {
-            yearNode.children.forEach { categoryNode ->
-                CategoryRow(categoryNode, onShowClick)
+            val categories = yearNode.children
+            when {
+                categories != null -> categories.forEach { categoryNode ->
+                    CategoryRow(categoryNode, onShowClick)
+                }
+                yearNode.loadFailed -> Text(
+                    text = "Couldn't load ${yearNode.year}. Tap to retry.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .clickable { onLoadYear(yearNode.year) }
+                        .padding(horizontal = 8.dp, vertical = 10.dp)
+                )
+                else -> CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp, vertical = 10.dp)
+                        .size(24.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 2.dp
+                )
             }
         }
     }
 }
 
 @Composable
-private fun CategoryRow(categoryNode: CategoryNode, onShowClick: (Show) -> Unit) {
+private fun CategoryRow(categoryNode: CategoryNode, onShowClick: (ShowSummary) -> Unit) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier = Modifier.animateContentSize()) {
@@ -275,7 +307,7 @@ private fun CategoryRow(categoryNode: CategoryNode, onShowClick: (Show) -> Unit)
 }
 
 @Composable
-private fun ShowCard(show: Show, onShowClick: (Show) -> Unit) {
+private fun ShowCard(show: ShowSummary, onShowClick: (ShowSummary) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -291,31 +323,6 @@ private fun ShowCard(show: Show, onShowClick: (Show) -> Unit) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (!show.thumbnail.isNullOrBlank()) {
-                AsyncImage(
-                    model = show.thumbnail,
-                    contentDescription = show.title,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(10.dp)),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "♪",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = show.title,
@@ -324,32 +331,13 @@ private fun ShowCard(show: Show, onShowClick: (Show) -> Unit) {
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    show.date?.formatted?.let { dateStr ->
-                        if (dateStr.isNotBlank()) {
-                            Text(
-                                text = dateStr,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    if (show.filelist.isNotEmpty()) {
-                        Text(
-                            text = "•",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = "${show.filelist.size} file${if (show.filelist.size != 1) "s" else ""}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                show.date?.formatted?.takeIf { it.isNotBlank() }?.let { dateStr ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = dateStr,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             Icon(

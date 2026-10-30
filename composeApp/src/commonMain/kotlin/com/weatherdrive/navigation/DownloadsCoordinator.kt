@@ -1,7 +1,7 @@
 package com.weatherdrive.navigation
 
 import androidx.compose.runtime.Composable
-import com.weatherdrive.model.Show
+import com.weatherdrive.model.ShowSummary
 
 /**
  * Platform-specific coordinator for the Downloads tab navigation.
@@ -10,7 +10,7 @@ import com.weatherdrive.model.Show
  * On iOS: Owns UINavigationController and handles push/pop navigation
  */
 expect class DownloadsCoordinator() {
-    fun navigateToShowDetail(show: Show)
+    fun navigateToShowDetail(show: ShowSummary)
     fun navigateBack()
 
     /**

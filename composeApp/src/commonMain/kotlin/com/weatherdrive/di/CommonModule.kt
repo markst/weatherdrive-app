@@ -28,9 +28,10 @@ val commonModule = module {
     single { DownloadManager(get<WeatherdriveApi>(), get(), get()) }
     single { PlayerViewModel(get()) }
     viewModel { HomeViewModel(get()) }
-    viewModel { (showId: Long) ->
+    viewModel { (showId: Long, slug: String) ->
         ShowDetailViewModel(
             showId = showId,
+            slug = slug,
             repository = get(),
             playerService = get(),
             downloadManager = get(),

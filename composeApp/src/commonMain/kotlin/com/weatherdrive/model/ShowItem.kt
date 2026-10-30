@@ -67,7 +67,7 @@ data class ShowItem(
                     }
                     Stream.GoogleDrive(
                         title = streamTitle,
-                        fileSize = fileItem.fileSizeInMB.formatFileSize(),
+                        fileSize = fileItem.fileSizeInMB.takeIf { it > 0 }?.formatFileSize(),
                         id = fileItem.googleDriveId,
                         timeInSeconds = fileItem.timeInSeconds
                     )
