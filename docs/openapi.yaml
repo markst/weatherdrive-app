@@ -1,0 +1,405 @@
+openapi: 3.0.3
+info:
+  title: Weatherdrive (Flightpath Estate DRVR) API
+  version: 2026-10-30
+  description: |
+    Reverse-engineered from https://www.flightpathestate.com/drvr/ (Angular SPA, `main-*.js`)
+    and observed responses. Not an official spec.
+
+    Replaces the legacy API (`GET /api/token`, `GET /api/drvr/{date}`), which now returns 404.
+    The legacy API returned the whole archive in one ~2MB document. The new API is lazy:
+    year/category -> recording summaries -> recording detail (one request per recording).
+
+    Clients SHOULD read the endpoint index (`GET /public/api/drvr`) rather than hardcode paths;
+    the web client does so.
+
+    Fields marked "observed" were seen in responses but are not guaranteed.
+servers:
+  - url: https://www.flightpathestate.com/public/api/drvr
+    description: Archive metadata
+  - url: https://weatherdrive.markturnip.dev
+    description: File access service (Google Drive credentials). Separate service, own repo.
+security: []
+tags:
+  - name: archive
+  - name: files
+paths:
+  /:
+    get:
+      tags: [archive]
+      operationId: getEndpoints
+      summary: Endpoint index
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointIndex'
+  /year:
+    get:
+      tags: [archive]
+      operationId: listYears
+      summary: All years with recording counts (newest first)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionList'
+  /category:
+    get:
+      tags: [archive]
+      operationId: listCategories
+      summary: All categories with recording counts
+      description: 'Observed categories: broadcast, chart, compilation, event, interview, mix, tribute.'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionList'
+  /year/{year}:
+    get:
+      tags: [archive]
+      operationId: listRecordingsByYear
+      summary: Recording summaries for a year
+      description: |
+        `collections[0]` is always `All`; subsequent collections group the same recordings by category.
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema: { type: string, example: '2025' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /category/{category}:
+    get:
+      tags: [archive]
+      operationId: listRecordingsByCategory
+      summary: Recording summaries for a category
+      description: Same shape as `/year/{year}`. `collections[0]` is `All`; further collections are per year (`name` = year, `backLabel` = "back to 2019"), descending.
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema: { type: string, example: mix }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /recording/{slug}:
+    get:
+      tags: [archive]
+      operationId: getRecording
+      summary: Full recording detail
+      description: Lookup is by `slug` only. `/recording/{id}` and `/recording/{id}/{slug}` return 404.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string, example: songs-for-the-swinging-subversives }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recording]
+                properties:
+                  recording:
+                    $ref: '#/components/schemas/Recording'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /search/{query}:
+    get:
+      tags: [archive]
+      operationId: search
+      summary: Search recordings
+      description: Query is a path segment (URL-encode it). `?q=`, `?query=` and `?search=` are NOT supported ("Missing search query").
+      parameters:
+        - name: query
+          in: path
+          required: true
+          schema: { type: string, example: weatherall }
+      responses:
+        '200':
+          description: OK. `list` is empty when nothing matches.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+  /recent:
+    get:
+      tags: [archive]
+      operationId: listRecentUpdates
+      summary: Recently added/changed recordings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecentList'
+  /file/{googleDriveId}:
+    get:
+      tags: [files]
+      operationId: getFileAccess
+      servers:
+        - url: https://weatherdrive.markturnip.dev
+      summary: Resolve a Drive file id to a download URL plus OAuth credentials
+      description: |
+        Needed for files >100MB, which Drive refuses to serve anonymously. Use `url` with
+        `Authorization: <token_type> <access_token>`. Unchanged by the archive API migration (verified 200).
+        Credentials are short-lived secrets: never log or commit them.
+
+        Anonymous alternative used by the web client (small files only):
+        `https://drive.usercontent.google.com/download?export=download&confirm=t&id={googleDriveId}`
+      parameters:
+        - name: googleDriveId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileAccess'
+components:
+  responses:
+    NotFound:
+      description: Unknown year/category/slug. Note the message leaks a backing path (`data/recording/<slug>.json`).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string, example: 'Not found: data/recording/nope.json' }
+    EndpointIndex:
+      type: object
+      required: [endpoints]
+      properties:
+        endpoints:
+          type: object
+          required: [year, category, recording, search, recent]
+          additionalProperties: false
+          properties:
+            year: { $ref: '#/components/schemas/Endpoint' }
+            category: { $ref: '#/components/schemas/Endpoint' }
+            recording: { $ref: '#/components/schemas/Endpoint' }
+            search: { $ref: '#/components/schemas/Endpoint' }
+            recent: { $ref: '#/components/schemas/Endpoint' }
+    Endpoint:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          description: Site-relative path, e.g. `/public/api/drvr/year`. Resolve against `https://www.flightpathestate.com`.
+    CollectionList:
+      type: object
+      required: [type, total, list]
+      properties:
+        type: { type: string, enum: [collection-list] }
+        total:
+          type: string
+          description: Number of items. Serialized as a string (observed).
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionItem'
+    CollectionItem:
+      type: object
+      required: [name, count]
+      properties:
+        name:
+          type: string
+          description: Year (`"2025"`) or category key (`mix`). Use as the path parameter.
+        title:
+          type: string
+          description: Display name, categories only (`Mixes`). Absent for years.
+        count: { type: integer }
+    RecordingList:
+      type: object
+      required: [type, name, collections]
+      properties:
+        type: { type: string, enum: [recording-list] }
+        name: { type: string }
+        collections:
+          type: array
+          items:
+            type: object
+            required: [name, title, backLabel, count, list]
+            properties:
+              name: { type: string, description: '`All` or a category/year key.' }
+              title: { type: string }
+              backLabel: { type: string, example: all in 2025 }
+              count: { type: integer }
+              list:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecordingSummary'
+    RecordingSummary:
+      type: object
+      required: [category, id, slug, date, displayTitle]
+      properties:
+        category: { type: string }
+        id: { type: integer }
+        slug: { type: string }
+        date: { $ref: '#/components/schemas/PartialDate' }
+        displayTitle: { type: string }
+    PartialDate:
+      type: object
+      description: Zero-padded strings. `"00"` means unknown month/day.
+      required: [year, month, day]
+      properties:
+        year: { type: string, example: '1983' }
+        month: { type: string, example: '00' }
+        day: { type: string, example: '00' }
+    Recording:
+      type: object
+      required: [id, slug, category, date, displayTitle, filelist, tracklistItems]
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        category: { type: string }
+        title:
+          type: array
+          items: { type: string }
+        displayTitle: { type: string }
+        alias: { type: string, nullable: true }
+        artists:
+          type: array
+          items: { type: string }
+        displayArtists: { type: string }
+        date: { $ref: '#/components/schemas/PartialDate' }
+        displayDate: { type: string, example: 5th May 2025 }
+        dateModified: { type: string, format: date }
+        displayKind: { type: string, example: a compilation }
+        displayRunTime: { type: string, nullable: true }
+        timeInSeconds: { type: integer, description: 0 when no audio. }
+        genre:
+          type: array
+          items: { type: string }
+        image:
+          type: string
+          format: uri
+          description: 300x300 artwork URL.
+        content:
+          type: string
+          description: Plain text description (CRLF line breaks).
+        descriptionHtml:
+          type: string
+          description: Same description as HTML (`<br>`).
+        filelist:
+          type: array
+          description: Empty when there is no hosted audio (e.g. Mixcloud-only; see `webpage`).
+          items:
+            $ref: '#/components/schemas/AudioFile'
+        webpage:
+          type: object
+          description: External page for the recording (observed on recordings without hosted audio).
+          properties:
+            url: { type: string, format: uri }
+            title: { type: string }
+            label: { type: string }
+        tracklistFormat: { type: string, description: 'Observed: none.' }
+        tracklistLayout: { type: string, description: 'Observed: numbered, list.' }
+        tracklistItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/TracklistItem'
+    AudioFile:
+      type: object
+      required: [googleDriveId]
+      properties:
+        title: { type: string, description: Often empty. }
+        googleDriveId: { type: string }
+        timeInSeconds: { type: integer }
+    TracklistItem:
+      type: object
+      properties:
+        type: { type: string, description: 'Observed: track.' }
+        raw: { type: string }
+        timestamp: { type: integer, nullable: true }
+        displayTimestamp: { type: string, nullable: true }
+        number: { type: integer, nullable: true }
+        position: { type: integer }
+        artist: { type: string, nullable: true }
+        title: { type: string, nullable: true }
+        label: { type: string, nullable: true }
+        year: { type: string, nullable: true }
+        placeholder: { type: boolean }
+        selectedBy: { type: string, nullable: true }
+    SearchResult:
+      type: object
+      required: [query, list]
+      properties:
+        query: { type: string }
+        list:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: string }
+              categoryName: { type: string }
+              date: { $ref: '#/components/schemas/PartialDate' }
+              foundOnField: { type: string, description: 'Observed: artist.' }
+              recording: { $ref: '#/components/schemas/RecordingSummary' }
+    RecentList:
+      type: object
+      required: [type, list]
+      properties:
+        type: { type: string, enum: [recent-list] }
+        list:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              slug: { type: string }
+              title: { type: string }
+              description: { type: string }
+              type: { type: string, description: 'Category key, e.g. event.' }
+              dateInISO8601: { type: string, format: date }
+              isNew: { type: boolean }
+              changes:
+                type: array
+                items: { type: string, description: 'Observed: added.' }
+    FileAccess:
+      type: object
+      required: [url, credentials]
+      properties:
+        url:
+          type: string
+          format: uri
+          example: https://www.googleapis.com/drive/v3/files/FILE_ID?alt=media
+        credentials:
+          type: object
+          description: snake_case on the wire.
+          properties:
+            access_token: { type: string }
+            token_type: { type: string }
+            expiry_date: { type: integer, format: int64, description: Epoch milliseconds (observed). }
+            refresh_token: { type: string }

@@ -29,6 +29,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "weatherdrive-app"
 include(":composeApp")
+include(":api")
 include(":androidApp")
 
 includeBuild("submodules/radioplayer-kt")
