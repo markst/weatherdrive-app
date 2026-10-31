@@ -3,15 +3,12 @@ package com.weatherdrive.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.weatherdrive.model.CategoryNode
-import com.weatherdrive.model.Show
 import com.weatherdrive.model.YearNode
 import com.weatherdrive.repository.ShowRepository
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed class UiState {
@@ -21,45 +18,55 @@ sealed class UiState {
 }
 
 class HomeViewModel(private val repository: ShowRepository) : ViewModel() {
-    private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1).also {
-        it.tryEmit(Unit)
-    }
+    private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    val uiState: StateFlow<UiState> = refreshTrigger
-        .flatMapLatest {
-            flow {
-                emit(UiState.Loading)
-                try {
-                    val shows = repository.fetchShows()
-                    emit(UiState.Success(buildTree(shows)))
-                } catch (e: Exception) {
-                    emit(UiState.Error(e.message ?: "Unknown error"))
-                }
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.Lazily, UiState.Loading)
+    private val inFlightYears = mutableSetOf<String>()
+
+    init {
+        refresh()
+    }
 
     fun refresh() {
-        viewModelScope.launch { refreshTrigger.emit(Unit) }
+        viewModelScope.launch {
+            _uiState.value = UiState.Loading
+            inFlightYears.clear()
+            _uiState.value = try {
+                UiState.Success(
+                    repository.fetchYears()
+                        .map { YearNode(year = it.name, count = it.count) }
+                        .sortedByDescending { it.year }
+                )
+            } catch (e: Exception) {
+                UiState.Error(e.message ?: "Unknown error")
+            }
+        }
     }
 
-    private fun buildTree(shows: List<Show>): List<YearNode> {
-        return shows
-            .groupBy { it.year }
-            .entries
-            .sortedByDescending { it.key }
-            .map { (year, yearShows) ->
-                val categories = yearShows
-                    .groupBy { it.category }
-                    .entries
-                    .sortedBy { it.key }
-                    .map { (category, catShows) ->
-                        CategoryNode(
-                            category = category,
-                            children = catShows.sortedBy { it.title }
-                        )
-                    }
-                YearNode(year = year, children = categories)
+    /** Loads the recordings of [year] if not already loaded or loading. Safe to call repeatedly. */
+    fun loadYear(year: String) {
+        val loaded = (_uiState.value as? UiState.Success)?.treeNodes
+            ?.firstOrNull { it.year == year }
+            ?.children != null
+        if (loaded || !inFlightYears.add(year)) return
+
+        viewModelScope.launch {
+            val result = try {
+                repository.getYear(year).categories
+                    .map { CategoryNode(category = it.category, children = it.shows.sortedBy { s -> s.title }) }
+                    .sortedBy { it.category }
+            } catch (e: Exception) {
+                null
             }
+            inFlightYears.remove(year)
+            updateYear(year) { it.copy(children = result, loadFailed = result == null) }
+        }
+    }
+
+    private fun updateYear(year: String, transform: (YearNode) -> YearNode) {
+        _uiState.update { state ->
+            if (state !is UiState.Success) state
+            else state.copy(treeNodes = state.treeNodes.map { if (it.year == year) transform(it) else it })
+        }
     }
 }

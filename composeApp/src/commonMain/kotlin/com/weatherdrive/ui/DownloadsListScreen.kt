@@ -56,7 +56,8 @@ import com.weatherdrive.download.DownloadProgress
 import com.weatherdrive.download.DownloadProgressState
 import com.weatherdrive.model.FileItem
 import com.weatherdrive.player.PlaybackUiState
-import com.weatherdrive.model.Show
+import com.weatherdrive.model.ShowSummary
+import com.weatherdrive.model.toSummary
 import com.weatherdrive.ui.theme.PlayerDimens
 import com.weatherdrive.util.formatInfo
 import com.weatherdrive.util.formatSpeed
@@ -68,7 +69,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun DownloadsListScreen(
     viewModel: DownloadsListViewModel = koinViewModel<DownloadsListViewModel>(),
     onBack: (() -> Unit)? = null,
-    onShowClick: ((Show) -> Unit)? = null,
+    onShowClick: ((ShowSummary) -> Unit)? = null,
     showTopBar: Boolean = true
 ) {
     val downloads by viewModel.downloads.collectAsState()
@@ -228,7 +229,7 @@ fun DownloadsListScreen(
                                 }
                             },
                             onShowClick = downloadProgress.show?.let { show ->
-                                onShowClick?.let { { it(show) } }
+                                onShowClick?.let { { it(show.toSummary()) } }
                             },
                             onDeleteClick = { itemToDelete = downloadProgress.fileItem }
                         )

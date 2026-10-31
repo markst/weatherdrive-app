@@ -3,7 +3,7 @@ package com.weatherdrive.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
-import com.weatherdrive.model.Show
+import com.weatherdrive.model.ShowSummary
 import com.weatherdrive.ui.HomeScreen
 import com.weatherdrive.ui.ShowDetailScreen
 import com.weatherdrive.ui.theme.WeatherDriveTheme
@@ -83,11 +83,12 @@ actual class BrowseCoordinator(
         )
     }
 
-    actual fun navigateToShowDetail(show: Show) {
+    actual fun navigateToShowDetail(show: ShowSummary) {
         val detailVC = ComposeUIViewController {
             WeatherDriveTheme {
                 ShowDetailScreen(
                     showId = show.id,
+                    slug = show.slug,
                     onBack = { navigateBack() },
                     showTopBar = false
                 )

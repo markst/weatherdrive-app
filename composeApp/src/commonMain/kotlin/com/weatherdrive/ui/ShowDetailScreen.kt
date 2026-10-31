@@ -120,12 +120,13 @@ private fun DownloadProgressState?.toDownloadStatus(): DownloadStatus {
 @Composable
 fun ShowDetailScreen(
     showId: Long,
+    slug: String,
     onBack: () -> Unit = {},
     showTopBar: Boolean = true
 ) {
     val viewModel: ShowDetailViewModel = koinViewModel(
         key = "show_$showId"
-    ) { parametersOf(showId) }
+    ) { parametersOf(showId, slug) }
     val show by viewModel.show.collectAsState()
 
     // Show loading state while fetching show data

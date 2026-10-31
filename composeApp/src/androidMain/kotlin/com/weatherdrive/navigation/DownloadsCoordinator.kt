@@ -9,7 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.weatherdrive.model.Show
+import com.weatherdrive.model.ShowSummary
 import com.weatherdrive.navigation.routes.DownloadsHomeRoute
 import com.weatherdrive.navigation.routes.ShowDetailRoute
 import com.weatherdrive.navigation.routes.toRoute
@@ -41,12 +41,12 @@ actual class DownloadsCoordinator actual constructor() {
             }
             composable<ShowDetailRoute> { backStackEntry ->
                 val route: ShowDetailRoute = backStackEntry.toRoute()
-                ShowDetailScreen(showId = route.id, onBack = { navigateBack() }, showTopBar = false)
+                ShowDetailScreen(showId = route.id, slug = route.slug, onBack = { navigateBack() }, showTopBar = false)
             }
         }
     }
 
-    actual fun navigateToShowDetail(show: Show) {
+    actual fun navigateToShowDetail(show: ShowSummary) {
         navController?.navigate(show.toRoute())
     }
 

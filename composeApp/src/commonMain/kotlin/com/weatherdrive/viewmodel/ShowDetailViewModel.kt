@@ -20,6 +20,8 @@ import kotlinx.coroutines.launch
  */
 class ShowDetailViewModel(
     private val showId: Long,
+    /** Blank for shows persisted before the API migration; those load from the stored copy. */
+    private val slug: String,
     private val repository: ShowRepository,
     private val playerService: PlayerService,
     val downloadManager: DownloadManager,
@@ -46,7 +48,7 @@ class ShowDetailViewModel(
     private fun loadShow() {
         viewModelScope.launch {
             try {
-                val show = repository.getShowById(showId)
+                val show = fetchShow() ?: persistedShow()
                 rawShow = show
                 fileItemIndex = show?.filelist?.associateBy { it.googleDriveId } ?: emptyMap()
                 _show.value = show?.let { ShowItem.from(it) }
@@ -60,6 +62,20 @@ class ShowDetailViewModel(
             }
         }
     }
+
+    private suspend fun fetchShow(): Show? {
+        if (slug.isBlank()) return null
+        return try {
+            repository.getShow(slug)
+        } catch (e: Exception) {
+            println("ShowDetailViewModel: Failed to fetch show $slug: ${e.message}")
+            null
+        }
+    }
+
+    /** Downloaded shows keep a copy, so they still open offline. */
+    private fun persistedShow(): Show? =
+        downloadManager.downloads.value.values.firstNotNullOfOrNull { it.show?.takeIf { s -> s.id == showId } }
 
     /**
      * Toggle the favourite state of the current show.
